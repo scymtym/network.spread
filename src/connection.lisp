@@ -79,7 +79,7 @@ connection can participate in zero or more spread groups."))
   (iter (while (or block? (%poll (slot-value connection 'handle))))
 	(for message next (%receive (slot-value connection 'handle)))
 	(if (eq (first message) :regular)
-	    (return (rest message))
+	    (return (values-list (rest message)))
 	    (bind (((type group members) message))
 	      (run-hook (object-hook connection (case type
 						  (:join  'join-hook)
