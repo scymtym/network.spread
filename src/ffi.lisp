@@ -148,8 +148,8 @@
 
 (defun %connect (daemon
 		 &key
-		 name
-		 priority?
+		 ;; name
+		 ;; priority?
 		 membership?)
   (cffi:with-foreign-objects ((handle '(:pointer :int)))
     (cffi:with-foreign-string (private-group (make-string +max-group-name+))
