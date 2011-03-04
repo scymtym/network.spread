@@ -64,7 +64,9 @@ spread group communication system."
 		:lift)
   :properties  ((:spread-daemon . "5103"))
   :components  ((:module     "test"
-	         :components ((:file       "package"))))
+		 :components ((:file       "package")
+			      (:file       "connection"
+			       :depends-on ("package")))))
   :in-order-to ((test-op (load-op :cl-spread-test))))
 
 (defmethod perform ((op test-op) (system (eql (find-system :cl-spread-test))))

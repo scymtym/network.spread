@@ -1,4 +1,4 @@
-;;; package.lisp --- Package definition for unit tests of the cl-spread system.
+;;; connection.lisp ---
 ;;
 ;; Copyright (C) 2011 Jan Moringen
 ;;
@@ -17,23 +17,20 @@
 ;; You should have received a copy of the GNU General Public License
 ;; along with this program. If not, see <http://www.gnu.org/licenses>.
 
-(cl:in-package :cl-user)
-
-(defpackage :spread.test
-  (:use
-   :cl
-   :lift
-
-   :spread)
-  (:export
-   :root)
-  (:documentation
-   "This package contains unit tests for the cl-spread system"))
-
 (in-package :spread.test)
 
-(deftestsuite root ()
-  ((daemon (asdf:component-property (asdf:find-system :cl-spread-test)
-				    :spread-daemon)))
+(deftestsuite connection-root (root)
+  ()
   (:documentation
-   "Root unit test suite for the cl-spread system."))
+   "Units test for the `connection' class and `connect' method."))
+
+(addtest (connection-root
+          :documentation
+	  "Smoke test for the `connect' method.")
+  smoke
+
+  (let ((connection (spread:connect daemon)))
+    (unwind-protect
+	 (progn
+	   )
+      (disconnect connection))))
