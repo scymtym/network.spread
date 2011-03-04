@@ -166,7 +166,9 @@
 	    (cffi:mem-ref handle :int)
 	    (cffi:convert-from-foreign private-group :string)))
 	  (t
-	   (%signal-error "Connect error: ~S" result)))))))
+	   (error 'connect-failed
+		  :name daemon
+		  :code result)))))))
 
 (defun %disconnect (handle)
   (let ((result (spread-disconnect handle)))
