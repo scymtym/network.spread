@@ -1,0 +1,15 @@
+#+TITLE:  cl-spread README
+#+AUTHOR: Jan Moringen
+#+EMAIL:  jmoringe@techfak.uni-bielefeld.de
+
+* Introduction
+
+#+BIBLIOGRAPHY: literature apalike
+
+* Settings :noexport:
+
+#+OPTIONS: H:2 num:t toc:t \n:nil @:t ::t |:t ^:t -:t f:t *:t <:t
+
+# Local Variables:
+# mode: org
+# End:
