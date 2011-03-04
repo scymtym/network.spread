@@ -20,7 +20,8 @@
 (in-package :spread.test)
 
 (deftestsuite connection-root (root)
-  ()
+  (joins
+   leaves)
   (:function
    (check-groups (connection expected context)
      (let ((groups (copy-seq (connection-groups connection))))
@@ -30,6 +31,22 @@
 	:report    "~@<~A, the connection ~A is a member of the groups ~{~S~
 ~^, ~}, not the groups ~{~S~^, ~}.~@:>"
 	:arguments (context connection groups expected)))))
+  (:function
+   (event-equal (event1 event2)
+     (and (string=   (first  event1) (first  event2))
+	  (set-equal (second event1) (second event2)
+		     :test #'string=))))
+  (:function
+   (check-membership-event (connection
+			    expected-joins expected-leaves)
+   (sleep .2)
+   (iter:iter (iter:repeat 10) (receive connection :block? nil))
+   (ensure-same
+    joins expected-joins
+    :test (curry #'every #'(lambda (e1 e2) (event-equal e1 e2))))
+   (ensure-same
+    leaves expected-leaves
+    :test (curry #'every #'(lambda (e1 e2) (event-equal e1 e2))))))
   (:documentation
    "Units test for the `connection' class and `connect' method."))
 
@@ -40,7 +57,10 @@
 
   (let ((connection (connect daemon)))
     (unwind-protect
-	 (ensure connection)
+	 (progn
+	   (ensure connection)
+	   (ensure (stringp (connection-name connection)))
+	   (ensure-null (connection-groups connection)))
       (disconnect connection)))
 
   ;; Illegal spread name
@@ -71,6 +91,60 @@
     (check-groups
      connection '("rsb://example/informer")
      "After leaving the group \"rsb://example/informer\"")))
+
+(addtest (connection-root
+          :documentation
+	  "Tests for membership hooks.")
+  membership-hooks
+
+  (with-connection (connection daemon)
+    (let ((self-name  (connection-name connection)))
+      (hooks:add-to-hook (hooks:object-hook connection 'join-hook)
+			 #'(lambda (group members)
+			     (push `(,group ,members) joins)))
+      (hooks:add-to-hook (hooks:object-hook connection 'leave-hook)
+			 #'(lambda (group members)
+			     (push `(,group ,members) leaves)))
+      (join connection "foo")
+      (check-membership-event
+       connection
+       `(("foo" (,self-name)))
+       ())
+
+      (join connection "bar")
+      (check-membership-event
+       connection
+       `(("bar" (,self-name))
+	 ("foo" (,self-name)))
+       ())
+
+      (with-connection (other daemon)
+	(let ((other-name (connection-name other)))
+	  (join other "foo")
+	  (check-membership-event
+	   connection
+	   `(("foo" (,other-name ,self-name))
+	     ("bar" (,self-name))
+	     ("foo" (,self-name)))
+	   ())
+
+	  (join other "bar")
+	  (check-membership-event
+	   connection
+	   `(("bar" (,other-name ,self-name))
+	     ("foo" (,other-name ,self-name))
+	     ("bar" (,self-name))
+	     ("foo" (,self-name)))
+	   ())
+
+	  (join other "baz")
+	  (check-membership-event
+	   connection
+	   `(("bar" (,other-name ,self-name))
+	     ("foo" (,other-name ,self-name))
+	     ("bar" (,self-name))
+	     ("foo" (,self-name)))
+	   ()))))))
 
 (addtest (connection-root
           :documentation
