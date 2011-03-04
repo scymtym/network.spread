@@ -21,16 +21,81 @@
 
 (deftestsuite connection-root (root)
   ()
+  (:function
+   (check-groups (connection expected context)
+     (let ((groups (copy-seq (connection-groups connection))))
+       (ensure-same
+	groups expected
+	:test      #'alexandria:set-equal
+	:report    "~@<~A, the connection ~A is a member of the groups ~{~S~
+~^, ~}, not the groups ~{~S~^, ~}.~@:>"
+	:arguments (context connection groups expected)))))
   (:documentation
    "Units test for the `connection' class and `connect' method."))
 
 (addtest (connection-root
           :documentation
 	  "Smoke test for the `connect' method.")
-  smoke
+  connect
 
-  (let ((connection (spread:connect daemon)))
+  (let ((connection (connect daemon)))
     (unwind-protect
-	 (progn
-	   )
-      (disconnect connection))))
+	 (ensure connection)
+      (disconnect connection)))
+
+  ;; Illegal spread name
+  (ensure-condition 'spread-error
+    (connect "no-such-daemon"))
+
+  ;; Not cool enough to used that port
+  (ensure-condition 'spread-error
+    (connect "31337")))
+
+(addtest (connection-root
+          :documentation
+	  "Tests for group membership functions.")
+  membership
+
+  (with-connection (connection daemon)
+    (join connection "rsb://example/informer")
+    (check-groups
+     connection '("rsb://example/informer")
+     "After joining the group \"rsb://example/informer\"")
+
+    (join connection "rsb://example/informer")
+    (check-groups
+     connection '("rsb://example/informer")
+     "After joining a group twice \"rsb://example/informer\" twice")
+
+    (join connection "rsb://example/informer")
+    (check-groups
+     connection '("rsb://example/informer")
+     "After leaving the group \"rsb://example/informer\"")))
+
+(addtest (connection-root
+          :documentation
+	  "Test sending data.")
+  send
+
+  (with-connection (sender daemon)
+    (send sender "rsb://example/informer" "foo")
+
+    (send sender '("group1" "group2") "bar")))
+
+(addtest (connection-root
+          :documentation
+	  "Test sending and receiving data.")
+  send-receive
+
+  (with-connection (sender daemon)
+    (let ((sender-name (connection-name sender)))
+      (with-connection (receiver daemon)
+	(with-group (receiver "rsb://example/informer")
+	  ;; The receiver should not get this message
+	  (send sender "rsb://example/some-group" "foo")
+
+	  ;; But this one
+	  (send sender "rsb://example/informer" "bar")
+	  (ensure-same
+	   (receive receiver :block? t)
+	   (values "bar" sender-name '("rsb://example/informer"))))))))

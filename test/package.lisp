@@ -22,6 +22,7 @@
 (defpackage :spread.test
   (:use
    :cl
+   :alexandria
    :lift
 
    :spread)
