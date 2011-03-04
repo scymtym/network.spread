@@ -28,6 +28,10 @@
    :bind
    :hooks)
 
+  ;; Conditions
+  (:export
+   :spread-error)
+
   (:export
    :connect :disconnect
    :join    :leave
