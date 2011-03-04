@@ -66,6 +66,8 @@ spread group communication system."
   :components  ((:module     "test"
 		 :components ((:file       "package")
 			      (:file       "connection"
+			       :depends-on ("package"))
+			      (:file       "macros"
 			       :depends-on ("package")))))
   :in-order-to ((test-op (load-op :cl-spread-test))))
 
