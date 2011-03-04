@@ -64,14 +64,20 @@ connection can participate in zero or more spread groups."))
 (defmethod join :after ((connection connection) (group string))
   (pushnew group (slot-value connection 'groups) :test #'string=))
 
+(defmethod join ((connection connection) (group list))
+  (map 'nil (curry #'join connection) group))
+
 (defmethod leave ((connection connection) (group string))
   (%leave (slot-value connection 'handle) group))
 
-(defmethod leave ((connection connection) (group (eql t)))
-  (map nil (curry #'leave connection) (slot-value connection 'groups)))
-
 (defmethod leave :after ((connection connection) (group string))
   (removef (slot-value connection 'groups) group :test #'string=))
+
+(defmethod leave ((connection connection) (group list))
+  (map nil (curry #'leave connection) group))
+
+(defmethod leave ((connection connection) (group (eql t)))
+  (leave connection (slot-value connection 'groups)))
 
 (defmethod receive ((connection connection)
 		    &key
