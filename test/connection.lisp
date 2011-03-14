@@ -77,6 +77,10 @@
   membership
 
   (with-connection (connection daemon)
+    (check-groups
+     connection '()
+     "Initially")
+
     (join connection "rsb://example/informer")
     (check-groups
      connection '("rsb://example/informer")
@@ -85,12 +89,27 @@
     (join connection "rsb://example/informer")
     (check-groups
      connection '("rsb://example/informer")
-     "After joining a group twice \"rsb://example/informer\" twice")
+     "After joining the group \"rsb://example/informer\" twice")
 
-    (join connection "rsb://example/informer")
+    (leave connection "rsb://example/informer")
     (check-groups
-     connection '("rsb://example/informer")
-     "After leaving the group \"rsb://example/informer\"")))
+     connection '()
+     "After leaving the group \"rsb://example/informer\"")
+
+    (join connection '("foo" "bar" "baz"))
+    (check-groups
+     connection '("foo" "bar" "baz")
+     "After joining groups \"foo\", \"bar\" and \"baz\"")
+
+    (leave connection '("foo" "bar"))
+    (check-groups
+     connection '("baz")
+     "After leaving groups \"foo\" and \"bar\"")
+
+    (leave connection t)
+    (check-groups
+     connection '()
+     "After leaving all groups")))
 
 (addtest (connection-root
           :documentation
