@@ -41,7 +41,8 @@ classes."))
 	 ""))
   (:report
    (lambda (condition stream)
-     (format stream "~@<Failed to connect to spread daemon ~S: ~A.~@:>"
+     (format stream "~@<Failed to connect to the spread daemon ~
+designated by ~S: ~A.~@:>"
 	     (spread-error-name condition)
 	     (spread-error-code condition))))
   (:documentation
