@@ -106,6 +106,10 @@ connection can participate in zero or more spread groups."))
       (format stream "~A (~D) #~D"
 	      name (length groups) handle))))
 
+
+;;;
+;;
+
 (defmethod connect ((daemon string))
   "Connect to the spread segment designated by DAEMON. If the
 connection attempt succeeds, a `connection' instance is returned. "
@@ -113,3 +117,26 @@ connection attempt succeeds, a `connection' instance is returned. "
     (make-instance 'connection
 		   :handle handle
 		   :name   name)))
+
+(defmethod connect :around ((daemon string))
+  "Install restarts around the connection attempt."
+  (let (result)
+    (tagbody
+     retry
+       (restart-case
+	   (setf result (call-next-method daemon))
+	 (retry ()
+	   :report (lambda (stream)
+		     (format stream "~@<Retry connecting to the spread ~
+segment designated by ~S~@:>"
+			     daemon))
+	   (go retry))
+	 (use-daemon (new-daemon)
+	   :interactive (lambda ()
+			  (format *query-io* "Specify daemon: ")
+			  (force-output *query-io*)
+			  (list (read-line *query-io*)))
+	   :report "Retry connecting to the spread segment with a different daemon designator."
+	   (setf daemon new-daemon)
+	   (go retry))))
+    result))
