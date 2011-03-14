@@ -289,9 +289,6 @@
 	(t
 	 (%signal-error "Multigroup send failed: ~S" result))))))
 
-(defun %regular-message? (message)
-  (eq (first message) :regular))
-
 
 ;;; Utility functions
 ;;
