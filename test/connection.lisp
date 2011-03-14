@@ -61,6 +61,9 @@
 	   (ensure connection)
 	   (ensure (stringp (connection-name connection)))
 	   (ensure-null (connection-groups connection)))
+      (disconnect connection))
+
+    (ensure-condition 'spread-error
       (disconnect connection)))
 
   ;; Illegal spread name

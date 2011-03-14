@@ -174,19 +174,19 @@
   (let ((result (spread-disconnect handle)))
     (case result
       (:ok (values))
-      (t   (%signal-error "Disconnect error: ~S" result)))))
+      (t   (%signal-error "Disconnect error" result)))))
 
 (defun %join (handle group)
   (let ((result (spread-join handle group)))
     (case result
       (:ok (values))
-      (t   (%signal-error "Error joining group: ~S" result)))))
+      (t   (%signal-error "Error joining group ~S" result group)))))
 
 (defun %leave (handle group)
   (let ((result (spread-leave handle group)))
     (case result
       (:ok (values))
-      (t   (%signal-error "Error leaving group: ~S" result)))))
+      (t   (%signal-error "Error leaving group ~S" result group)))))
 
 (defun %poll (handle)
   (let ((result (spread-poll handle)))
@@ -196,7 +196,7 @@
       ((zerop result)
        nil)
       (t
-       (%signal-error "Error polling: ~S" result)))))
+       (%signal-error "Error polling" result)))))
 
 (defun %receive (handle)
   (cffi:with-foreign-objects ((service-type    '(:pointer message-type))
@@ -226,7 +226,7 @@
 
 	  ;; Negative result -> error
 	  (t
-	   (%signal-error "Error receiving ~S" result)))))))
+	   (%signal-error "Error receiving" result)))))))
 
 (defun %process-regular-message (service-type sender num-groups groups result buffer) ;; TODO message-type
   (declare (ignore service-type))
@@ -267,7 +267,7 @@
 	 (values))
 
 	(t
-	 (%signal-error "Sending failed: ~S" result))))))
+	 (%signal-error "Sending failed" result))))))
 
 (defun %send-multiple (handle destinations data)
   (cffi:with-foreign-strings ((groups  (apply #'concatenate 'string
@@ -287,7 +287,7 @@
 	 (values))
 
 	(t
-	 (%signal-error "Multigroup send failed: ~S" result))))))
+	 (%signal-error "Multigroup send failed" result))))))
 
 
 ;;; Utility functions
@@ -312,10 +312,17 @@
 					      :max-chars +max-group-name+))))
 
 (declaim (inline %signal-error)
-	 (ftype (function (string fixnum) symbol) %signal-error))
+	 (ftype (function (string (or fixnum keyword) &rest t) *) %signal-error))
 
-(defun %signal-error (format value)
-  (error format
-	 (cffi::%foreign-enum-keyword
-	  (funcall (cffi::find-type-parser 'spread::return-value))
-	  value :errorp t)))
+(defun %signal-error (format value &rest args)
+  (error 'simple-spread-error
+	 :format-control   format
+	 :format-arguments args
+	 :code
+	 (etypecase value
+	   (fixnum
+	    (cffi::%foreign-enum-keyword
+	     (funcall (cffi::find-type-parser 'spread::return-value))
+	     value :errorp t))
+	   (keyword
+	    value))))

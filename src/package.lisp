@@ -30,7 +30,9 @@
 
   ;; Conditions
   (:export
-   :spread-error)
+   :spread-error
+
+   :simple-spread-error)
 
   (:export
    :connect :disconnect

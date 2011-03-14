@@ -33,6 +33,20 @@
    "This class is used a superclass for all spread-related condition
 classes."))
 
+(define-condition simple-spread-error (spread-error
+				       simple-error)
+  ()
+  (:report
+   (lambda (condition stream)
+     (apply #'format stream
+	    (simple-condition-format-control   condition)
+	    (simple-condition-format-arguments condition))
+     (format stream ": ~A"
+	     (spread-error-code condition))))
+  (:documentation
+   "Condition instances of this class contain a simple problem
+description and a spread error code."))
+
 (define-condition connect-failed (spread-error)
   ((name :initarg  :name
 	 :type     string
