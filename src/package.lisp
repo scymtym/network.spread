@@ -31,8 +31,12 @@
   ;; Conditions
   (:export
    :spread-error
+   :spread-error-code
 
-   :simple-spread-error)
+   :simple-spread-error
+
+   :connect-failed
+   :spread-error-name)
 
   (:export
    :connect :disconnect
