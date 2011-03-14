@@ -116,6 +116,20 @@
 
 (addtest (connection-root
           :documentation
+	  "Tests for group membership-related conditions.")
+  membership-conditions
+
+  (with-connection (connection daemon)
+    (ensure-condition 'spread-error
+      (join connection (make-string (* 2 spread::+max-group-name+)
+				    :initial-element #\a)))
+
+    (ensure-condition 'spread-error
+      (leave connection (make-string (* 2 spread::+max-group-name+)
+				     :initial-element #\a)))))
+
+(addtest (connection-root
+          :documentation
 	  "Tests for membership hooks.")
   membership-hooks
 
