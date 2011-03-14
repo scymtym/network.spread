@@ -86,11 +86,13 @@ connection can participate in zero or more spread groups."))
 	(for message next (%receive (slot-value connection 'handle)))
 	(if (eq (first message) :regular)
 	    (return (values-list (rest message)))
-	    (bind (((type group members) message))
-	      (run-hook (object-hook connection (case type
-						  (:join  'join-hook)
-						  (:leave 'leave-hook)))
-			group members)))))
+	    (bind (((type group members) message)
+		   (hook (case type
+			   (:join  'join-hook)
+			   (:leave 'leave-hook))))
+	      (when hook
+		(run-hook (object-hook connection hook)
+			  group members))))))
 
 (defmethod send ((connection connection) (destination string) (data string))
   (%send-one (slot-value connection 'handle) destination data))
