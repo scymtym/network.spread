@@ -198,7 +198,8 @@
   send-receive
 
   (with-connection (sender daemon)
-    (let ((sender-name (connection-name sender)))
+    (let ((sender-name (connection-name sender))
+	  (expected    (map 'spread::octet-vector #'char-code "bar")))
       (with-connection (receiver daemon)
 	(with-group (receiver "rsb://example/informer")
 	  ;; The receiver should not get this message
@@ -208,4 +209,5 @@
 	  (send sender "rsb://example/informer" "bar")
 	  (ensure-same
 	   (receive receiver :block? t)
-	   (values "bar" sender-name '("rsb://example/informer"))))))))
+	   (values expected sender-name '("rsb://example/informer"))
+	   :test #'equalp))))))

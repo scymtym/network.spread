@@ -128,7 +128,7 @@
   (message-type       (:pointer :int16))
   (endian-mismatch    (:pointer :int))
   (max-message-length :int)
-  (message            (:pointer :char)))
+  (message            (:pointer :uchar)))
 
 (cffi:defcfun (spread-multicast "SP_multicast") :int
   (handle         :int)
@@ -136,7 +136,7 @@
   (group          :string)
   (message-type   :int16)
   (message-length :int)
-  (message        (:pointer :char)))
+  (message        (:pointer :uchar)))
 
 (cffi:defcfun (spread-multigroup-multicast "SP_multigroup_multicast") :int
   (handle         :int)
@@ -145,7 +145,7 @@
   (groups         (:pointer :string))
   (message-type   :int16)
   (message-length :int)
-  (message        (:pointer :char)))
+  (message        (:pointer :uchar)))
 
 
 ;;; Convenience wrappers
@@ -210,10 +210,10 @@
   (cffi:with-foreign-objects ((service-type    '(:pointer message-type))
 			      (num-groups      '(:pointer :int))
 			      (message-type1   '(:pointer :int16))
-			      (endian-mismatch '(:pointer :int)))
+			      (endian-mismatch '(:pointer :int))
+			      (buffer          '(:array :uchar 100000))) ;;+max-message+)))
     (cffi:with-foreign-strings ((groups (make-string (* +max-groups+ +max-group-name+)))
-				(sender (make-string +max-group-name+))
-				(buffer (make-string 512)))
+				(sender (make-string +max-group-name+)))
       (setf (cffi:mem-ref service-type :int) 0)
       (let ((result (spread-receive handle
 				    service-type ;; for input: 0 or DROP-RECV
@@ -221,7 +221,7 @@
 				    +max-groups+ num-groups groups
 				    message-type1
 				    endian-mismatch
-				    512 buffer)))
+				    +max-message+ buffer)))
 	(cond
 	  ;; Positive result -> process message
 	  ((not (minusp result))
@@ -242,9 +242,8 @@
   (let ((num-groups (cffi:mem-ref num-groups :int)))
     (list
      :regular
-     (cffi:foreign-string-to-lisp buffer
-				  :encoding :ascii
-				  :count result)
+     (coerce (cffi::foreign-array-to-lisp buffer `(:array :uchar ,result))
+	     'octet-vector)
      ;; TODO do not convert these if they are not required
      (cffi:convert-from-foreign sender :string)
      (if (not (minusp num-groups))
@@ -263,11 +262,11 @@
 	 (%extract-groups num-groups groups)
 	 :group-buffer-too-small))))
 
-(declaim (ftype (function (fixnum string string)
+(declaim (ftype (function (fixnum string octet-vector)
 			  (values)) %send-one))
 
 (defun %send-one (handle destination data)
-  (cffi:with-foreign-string (message data)
+  (cffi::with-foreign-array (message data `(:array :uchar ,(length data)))
     (let ((result (spread-multicast handle
 				    2          ;; service-type
 				    destination
@@ -280,28 +279,29 @@
 	(t
 	 (%signal-error "Sending failed" result))))))
 
-(declaim (ftype (function (fixnum list string)
+(declaim (ftype (function (fixnum list octet-vector)
 			  (values)) %send-multiple))
 
 (defun %send-multiple (handle destinations data)
-  (cffi:with-foreign-strings ((groups  (apply #'concatenate 'string
-					      (iter (for destination in destinations)
-						    (collect destination)
-						    (collect (make-list
-							      (- +max-group-name+ (length destination))
-							      :initial-element #\Nul)))))
-			      (message data))
-    (let ((result (spread-multigroup-multicast handle
-					       2          ;; service-type
-					       (length destinations) groups
-					       0          ;; message-type
-					       (length data) message)))
-      (cond
-	((not (minusp result))
-	 (values))
+  (cffi:with-foreign-string
+      (groups  (apply #'concatenate 'string
+		      (iter (for destination in destinations)
+			    (collect destination)
+			    (collect (make-list
+				      (- +max-group-name+ (length destination))
+				      :initial-element #\Nul)))))
+    (cffi::with-foreign-array (message data `(:array :uchar ,(length data)))
+      (let ((result (spread-multigroup-multicast handle
+						 2          ;; service-type
+						 (length destinations) groups
+						 0          ;; message-type
+						 (length data) message)))
+	(cond
+	  ((not (minusp result))
+	   (values))
 
-	(t
-	 (%signal-error "Multigroup send failed" result))))))
+	  (t
+	   (%signal-error "Multigroup send failed" result)))))))
 
 
 ;;; Utility functions

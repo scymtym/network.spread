@@ -94,13 +94,31 @@ connection can participate in zero or more spread groups."))
 		(run-hook (object-hook connection hook)
 			  group members))))))
 
-(defmethod send ((connection connection) (destination string) (data string))
+(defmethod send ((connection  connection)
+		 (destination string)
+		 (data        simple-array))
+  (check-type data octet-vector)
+
   (%send-one (slot-value connection 'handle) destination data))
 
-(defmethod send ((connection connection) (destination list) (data string))
+(defmethod send ((connection  connection)
+		 (destination list)
+		 (data        simple-array))
+  (check-type data octet-vector)
+
   (if (length= 1 destination)
       (%send-one (slot-value connection 'handle) (first destination) data)
       (%send-multiple (slot-value connection 'handle) destination data)))
+
+(defmethod send ((connection  connection)
+		 (destination string)
+		 (data        string))
+  (send connection destination (sb-ext:string-to-octets data)))
+
+(defmethod send ((connection  connection)
+		 (destination list)
+		 (data        string))
+  (send connection destination (sb-ext:string-to-octets data)))
 
 (defmethod print-object ((object connection) stream)
   (with-slots (handle name groups) object
