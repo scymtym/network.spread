@@ -193,6 +193,9 @@
       (:ok (values))
       (t   (%signal-error "Error leaving group ~S" result group)))))
 
+(declaim (ftype (function (fixnum) (or null fixnum)) %poll)
+	 (inline %poll))
+
 (defun %poll (handle)
   (let ((result (spread-poll handle)))
     (cond
@@ -260,6 +263,9 @@
 	 (%extract-groups num-groups groups)
 	 :group-buffer-too-small))))
 
+(declaim (ftype (function (fixnum string string)
+			  (values)) %send-one))
+
 (defun %send-one (handle destination data)
   (cffi:with-foreign-string (message data)
     (let ((result (spread-multicast handle
@@ -273,6 +279,9 @@
 
 	(t
 	 (%signal-error "Sending failed" result))))))
+
+(declaim (ftype (function (fixnum list string)
+			  (values)) %send-multiple))
 
 (defun %send-multiple (handle destinations data)
   (cffi:with-foreign-strings ((groups  (apply #'concatenate 'string
@@ -298,6 +307,9 @@
 ;;; Utility functions
 ;;
 
+(declaim (ftype (function (list) membership-event) %type->tag)
+	 (inline %type->tag))
+
 (defun %type->tag (type)
   (cond
     ((member :caused-by-join type)
@@ -306,7 +318,10 @@
 	 (member :caused-by-disconnect type))
      :leave)
     (t
-     :some-other-membership-event)))
+     :other)))
+
+(declaim (ftype (function (non-negative-fixnum t) list) %extract-groups)
+	 (inline %extract-groups))
 
 (defun %extract-groups (num-groups groups)
   (iter (repeat num-groups)
@@ -316,8 +331,8 @@
 					      :offset    offset
 					      :max-chars +max-group-name+))))
 
-(declaim (inline %signal-error)
-	 (ftype (function (string (or fixnum keyword) &rest t) *) %signal-error))
+(declaim (ftype (function (string (or fixnum keyword) &rest t) *) %signal-error)
+	 (inline %signal-error))
 
 (defun %signal-error (format value &rest args)
   (error 'simple-spread-error
