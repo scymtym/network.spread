@@ -39,15 +39,17 @@ spread group communication system."
 		:cl-hooks)
   :components  ((:module     "src"
 		 :components ((:file       "package")
+			      (:file       "types"
+			       :depends-on ("package"))
 			      (:file       "conditions"
 			       :depends-on ("package"))
 			      (:file       "protocol"
 			       :depends-on ("package"))
 			      (:file       "ffi"
-			       :depends-on ("package"))
+			       :depends-on ("package" "types"))
 			      (:file       "connection"
-			       :depends-on ("package" "ffi"
-					    "conditions"
+			       :depends-on ("package" "types"
+					    "conditions" "ffi"
 					    "protocol"))
 			      (:file       "macros"
 			       :depends-on ("package"
