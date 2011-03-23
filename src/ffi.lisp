@@ -83,9 +83,14 @@
 
   (:endian-reserved      #x80000080))
 
-(defvar +max-group-name+ 32)
+(defconstant +max-message+    100000
+  "The maximum size of a single message.")
 
-(defvar +max-groups+     32)
+(defconstant +max-group-name+ 32
+  "The maximum size of a group name.")
+
+(defconstant +max-groups+     32
+  "The maximum number of groups in a single API call.")
 
 
 ;;; Spread functions
