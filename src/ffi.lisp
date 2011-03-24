@@ -24,7 +24,10 @@
 ;;
 
 (cffi:define-foreign-library libspread
-  (:unix (:or "libspread.so.1" "libspread.so" "/vol/xcf/lib/libspread.so.2.0"))
+  (:unix (:or "/vol/spread/lib/libspread.so.2.0"
+	      "/vol/xcf/lib/libspread.so.2.0"
+	      "libspread.so"
+	      "libspread.so.1"))
   (t     (:default "libspread")))
 
 (cffi:use-foreign-library libspread)
