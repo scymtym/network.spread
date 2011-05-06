@@ -42,6 +42,11 @@
    :connect-failed
    :spread-error-name)
 
+  ;; Restarts
+  (:export
+   :retry
+   :use-daemon)
+
   ;; Variables
   (:export
    :+maximum-message-data-length+

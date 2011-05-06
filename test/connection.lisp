@@ -76,6 +76,24 @@
 
 (addtest (connection-root
           :documentation
+	  "Make sure restarts are established correctly during
+`connect' call.")
+  connect-restart
+
+  (handler-bind
+      ((spread-error
+	#'(lambda (condition)
+	    (ensure
+	     (find-restart 'retry))
+	    (ensure
+	     (find-restart 'use-daemon))
+
+	    (invoke-restart (find-restart 'use-daemon)
+			    daemon))))
+    (connect "no-such-daemon")))
+
+(addtest (connection-root
+          :documentation
 	  "Tests for group membership functions.")
   membership
 
