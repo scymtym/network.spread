@@ -208,7 +208,7 @@
 
   (with-connection (sender daemon)
     (let ((sender-name (connection-name sender))
-	  (expected    (map 'spread::octet-vector #'char-code "bar")))
+	  (expected    (map 'octet-vector #'char-code "bar")))
       (with-connection (receiver daemon)
 	(with-group (receiver "rsb://example/informer")
 	  ;; The receiver should not get this message

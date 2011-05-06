@@ -28,6 +28,10 @@
    :bind
    :hooks)
 
+  ;; Types
+  (:export
+   :octet-vector)
+
   ;; Conditions
   (:export
    :spread-error
