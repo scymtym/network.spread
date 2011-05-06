@@ -38,6 +38,13 @@
    :connect-failed
    :spread-error-name)
 
+  ;; Variables
+  (:export
+   :+maximum-message-data-length+
+
+   :*incoming-stream*
+   :*outgoing-stream*)
+
   (:export
    :connect :disconnect
    :join    :leave

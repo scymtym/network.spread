@@ -47,10 +47,12 @@ spread group communication system."
 			       :depends-on ("package"))
 			      (:file       "ffi"
 			       :depends-on ("package" "types"))
+			      (:file       "variables"
+			       :depends-on ("package" "ffi"))
 			      (:file       "connection"
 			       :depends-on ("package" "types"
 					    "conditions" "ffi"
-					    "protocol"))
+					    "protocol" "variables"))
 			      (:file       "macros"
 			       :depends-on ("package"
 					    "connection")))))

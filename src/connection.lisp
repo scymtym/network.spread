@@ -79,6 +79,15 @@ connection can participate in zero or more spread groups."))
 (defmethod leave ((connection connection) (group (eql t)))
   (leave connection (slot-value connection 'groups)))
 
+(defmethod receive :around ((connection connection)
+			    &key &allow-other-keys)
+  (if *incoming-stream*
+      (bind (((:values buffer sender recipients) (call-next-method)))
+	(format *incoming-stream* "~@<~{~2,'0X~^ ~}~@:>"
+		(coerce buffer 'list))
+	(values buffer sender recipients))
+      (call-next-method)))
+
 (defmethod receive ((connection connection)
 		    &key
 		    (block? t))
@@ -93,6 +102,15 @@ connection can participate in zero or more spread groups."))
 	      (when hook
 		(run-hook (object-hook connection hook)
 			  group members))))))
+
+(defmethod send :around ((connection  connection)
+			 (destination t)
+			 (data        simple-array))
+  (when (and *outgoing-stream*
+	     (typep data 'octet-vector))
+    (format *outgoing-stream* "~@<~{~2,'0X~^ ~}~@:>"
+	    (coerce data 'list)))
+  (call-next-method))
 
 (defmethod send ((connection  connection)
 		 (destination string)
