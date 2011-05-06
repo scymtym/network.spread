@@ -70,7 +70,7 @@
   (ensure-condition 'spread-error
     (connect "no-such-daemon"))
 
-  ;; Not cool enough to used that port
+  ;; Not cool enough to use that port
   (ensure-condition 'spread-error
     (connect "31337")))
 
@@ -180,7 +180,16 @@
 	     ("foo" (,other-name ,self-name))
 	     ("bar" (,self-name))
 	     ("foo" (,self-name)))
-	   ()))))))
+	   ())
+
+	  (leave other "bar")
+	  (check-membership-event
+	   connection
+	   `(("bar" (,other-name ,self-name))
+	     ("foo" (,other-name ,self-name))
+	     ("bar" (,self-name))
+	     ("foo" (,self-name)))
+	   `(("bar" (,self-name)))))))))
 
 (addtest (connection-root
           :documentation
