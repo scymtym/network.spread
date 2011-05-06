@@ -199,6 +199,7 @@
   (with-connection (sender daemon)
     (send sender "rsb://example/informer" "foo")
 
+    (send sender '("group1") "bar")
     (send sender '("group1" "group2") "bar")))
 
 (addtest (connection-root
