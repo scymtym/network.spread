@@ -42,7 +42,7 @@ spread group communication system."
 			      (:file       "types"
 			       :depends-on ("package"))
 			      (:file       "conditions"
-			       :depends-on ("package"))
+			       :depends-on ("package" "variables"))
 			      (:file       "protocol"
 			       :depends-on ("package"))
 			      (:file       "ffi"
