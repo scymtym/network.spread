@@ -251,9 +251,15 @@ be send but larger messages signal an error.")
     (with-connection (sender daemon)
       (with-connection (receiver daemon)
 	(with-group (receiver "message-size-limit")
+	  ;; Longest possible message
 	  (send sender "message-size-limit"
 		(make-message +maximum-message-data-length+))
+	  (ensure-same
+	   (length (receive receiver))
+	   +maximum-message-data-length+
+	   :test #'=)
 
+	  ;; Longer message has to signal an error
 	  (ensure-condition 'message-too-long
 	    (send sender "message-size-limit"
 		  (make-message (1+ +maximum-message-data-length+)))))))))
