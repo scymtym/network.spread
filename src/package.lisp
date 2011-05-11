@@ -40,7 +40,10 @@
    :simple-spread-error
 
    :connect-failed
-   :spread-error-name)
+   :spread-error-name
+
+   :message-too-long
+   :message-too-long-data)
 
   ;; Restarts
   (:export

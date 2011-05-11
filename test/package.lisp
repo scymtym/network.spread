@@ -23,6 +23,7 @@
   (:use
    :cl
    :alexandria
+   :bind
    :lift
 
    :spread)

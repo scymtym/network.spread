@@ -62,3 +62,20 @@ designated by ~S: ~A.~@:>"
   (:documentation
    "This condition is signaled when establishing a connection to the
 spread daemon fails."))
+
+(define-condition message-too-long (spread-error)
+  ((data :initarg  :data
+	 :type     octet-vector
+	 :reader   message-too-long-data
+	 :documentation
+	 "The data that caused the error."))
+  (:report
+   (lambda (condition stream)
+     (format stream "~@<Data is ~D octets long, which longer than the ~
+maximum message length ~D.~@:>"
+	     (length (message-too-long-data condition))
+	     +maximum-message-data-length+)))
+  (:documentation
+   "This error is signaled when an attempt is made to send an
+octet-vector which has more than `+maximum-message-data-length+'
+octets."))

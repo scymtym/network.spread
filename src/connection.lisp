@@ -110,6 +110,11 @@ connection can participate in zero or more spread groups."))
 	     (typep data 'octet-vector))
     (format *outgoing-stream* "~@<~{~2,'0X~^ ~}~@:>"
 	    (coerce data 'list)))
+
+  (unless (<= (length data) +maximum-message-data-length+)
+    (error 'message-too-long
+	   :data data))
+
   (call-next-method))
 
 (defmethod send ((connection  connection)

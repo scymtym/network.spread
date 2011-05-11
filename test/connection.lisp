@@ -239,3 +239,21 @@
 	   (receive receiver :block? t)
 	   (values expected sender-name '("rsb://example/informer"))
 	   :test #'equalp))))))
+
+(addtest (connection-root
+          :documentation
+	  "Make sure that messages of the maximum allowable size can
+be send but larger messages signal an error.")
+  message-size-limit
+
+  (bind (((:flet make-message (size))
+	  (make-string size :initial-element #\a)))
+    (with-connection (sender daemon)
+      (with-connection (receiver daemon)
+	(with-group (receiver "message-size-limit")
+	  (send sender "message-size-limit"
+		(make-message +maximum-message-data-length+))
+
+	  (ensure-condition 'message-too-long
+	    (send sender "message-size-limit"
+		  (make-message (1+ +maximum-message-data-length+)))))))))
