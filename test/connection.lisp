@@ -249,7 +249,10 @@
     (disconnect connection)
 
     (ensure-condition 'spread-error
-      (send connection "does-not-matter" "foo"))))
+      (send connection "does-not-matter" "foo"))
+
+    (ensure-condition 'spread-error
+      (send connection '("foo" "bar") "foo"))))
 
 (addtest (connection-root
           :documentation
