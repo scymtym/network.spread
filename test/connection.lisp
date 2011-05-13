@@ -242,6 +242,28 @@
 
 (addtest (connection-root
           :documentation
+	  "Test error handling in case of failed send operations.")
+  send/failure
+
+  (let ((connection (connect daemon)))
+    (disconnect connection)
+
+    (ensure-condition 'spread-error
+      (send connection "does-not-matter" "foo"))))
+
+(addtest (connection-root
+          :documentation
+	  "Test error handling in case of failed receive operations.")
+  receive/failure
+
+  (let ((connection (connect daemon)))
+    (disconnect connection)
+
+    (ensure-condition 'spread-error
+      (receive connection))))
+
+(addtest (connection-root
+          :documentation
 	  "Make sure that messages of the maximum allowable size can
 be send but larger messages signal an error.")
   message-size-limit
