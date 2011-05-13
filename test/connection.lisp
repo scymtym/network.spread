@@ -230,7 +230,7 @@
 	  (expected    (map 'octet-vector #'char-code "bar")))
       (with-connection (receiver daemon)
 	(with-group (receiver "rsb://example/informer")
-	  ;; The receiver should not get this message
+	  ;; The receiver should not get this message.
 	  (send sender "rsb://example/some-group" "foo")
 
 	  ;; But this one
@@ -238,7 +238,10 @@
 	  (ensure-same
 	   (receive receiver :block? t)
 	   (values expected sender-name '("rsb://example/informer"))
-	   :test #'equalp))))))
+	   :test #'equalp)
+
+	  ;; Non-blocking receive should just return.
+	  (receive receiver :block? nil))))))
 
 (addtest (connection-root
           :documentation
