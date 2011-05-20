@@ -19,8 +19,16 @@
 
 (in-package :spread)
 
+
+;;;
+;;
+
 (defconstant +maximum-message-data-length+ +max-message+
   "The maximum length (in bytes) of the data in a spread message.")
+
+
+;;;
+;;
 
 (declaim (special *incoming-stream*))
 
@@ -35,3 +43,21 @@ format.")
   "When this special variable is bound to an output-stream, outgoing
 data is printed onto that stream using a slightly hexdump-like
 format.")
+
+
+;;; Daemon-related parameters
+;;
+
+(defparameter *default-port* (or (asdf:component-property
+				  (asdf:find-system :cl-spread)
+				  :default-port)
+				 4803)
+  "The default port on which the Spread should listen when it is
+started via `start-daemon' or `with-daemon'.")
+
+(defparameter *default-daemon-program* (or (asdf:component-property
+					    (asdf:find-system :cl-spread)
+					    :default-daemon-program)
+					   "spread")
+  "The default name of the program that should be executed when
+starting the Spread daemon.")

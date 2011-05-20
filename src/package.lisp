@@ -54,6 +54,9 @@
   (:export
    :+maximum-message-data-length+
 
+   :*default-port*
+   :*default-daemon-program*
+
    :*incoming-stream*
    :*outgoing-stream*)
 

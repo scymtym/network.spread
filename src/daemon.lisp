@@ -20,8 +20,8 @@
 (in-package :spread)
 
 (defun start-daemon (&key
-		     (port              4803)
-		     (program           "spread")
+		     (port              *default-port*)
+		     (program           *default-daemon-program*)
 		     (host              "localhost")
 		     (host-address      "127.0.0.1")
 		     (broadcast-address "127.0.0.255"))
@@ -30,7 +30,8 @@
   (let ((config-filename (format nil "/tmp/spread-~8,'0X.conf"
 				 (random (ash 1 (* 8 4))))))
     ;; Write the specified configuration to that file.
-    (with-output-to-file (stream config-filename)
+    (with-output-to-file (stream config-filename
+			  :if-exists :supersede)
       (format stream
 	      "Spread_Segment ~A:~A {~%    ~A ~A~%}"
 	      broadcast-address port host host-address))
@@ -49,7 +50,11 @@
       ;; whether it died in the meantime.
       (sleep 5)
       (unless (sb-ext:process-alive-p process)
-	(error "Spread daemon failed to start."))
+	(error "~@<Spread daemon (~S) failed to start with parameters ~{~{~A = ~S~}~^, ~}.~@:>"
+	       program `((:port              ,port)
+			 (:host              ,host)
+			 (:host-address      ,host-address)
+			 (:broadcast-address ,broadcast-address))))
       ;; If everything looks good, return the process object.
       process)))
 
@@ -70,8 +75,8 @@ behind."
     (values)))
 
 (defmacro with-daemon ((&key
-			(port              4803)
-			(program           "spread")
+			(port              '*default-port*)
+			(program           '*default-daemon-program*)
 			(host              "localhost")
 			(host-address      "127.0.0.1")
 			(broadcast-address "127.0.0.255"))

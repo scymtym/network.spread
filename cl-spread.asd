@@ -24,6 +24,8 @@
 
 (cl:in-package :cl-spread-system)
 
+#+sbcl (asdf:load-system :sb-posix)
+
 (defsystem :cl-spread
   :author      "Jan Moringen <jmoringe@techfak.uni-bielefeld.de>"
   :maintainer  "Jan Moringen <jmoringe@techfak.uni-bielefeld.de>"
@@ -37,6 +39,11 @@ spread group communication system."
 		:cffi
 		:trivial-garbage
 		:cl-hooks)
+  :properties  ((:default-port           . #.(or #+sbcl (let ((value (sb-posix:getenv "SPREAD_PORT")))
+							  (when value (read-from-string value)))
+						 4803))
+		(:default-daemon-program . #.(or #+sbcl (sb-posix:getenv "SPREAD_DAEMON_PROGRAM")
+						 "spread")))
   :components  ((:module     "src"
 		 :components ((:file       "package")
 			      (:file       "types"
@@ -58,7 +65,7 @@ spread group communication system."
 					    "connection"))
 
 			      (:file       "daemon"
-			       :depends-on ("package")))))
+			       :depends-on ("package" "variables")))))
   :in-order-to ((test-op (test-op :cl-spread-test))))
 
 (defsystem :cl-spread-test
@@ -69,7 +76,7 @@ spread group communication system."
   :description "This system provides unit tests for the cl-spread system."
   :depends-on  (:cl-spread
 		:lift)
-  :properties  ((:spread-daemon . "5103"))
+  :properties  ((:port . 6789))
   :components  ((:module     "test"
 		 :components ((:file       "package")
 			      (:file       "connection"
@@ -81,4 +88,7 @@ spread group communication system."
   :in-order-to ((test-op (load-op :cl-spread-test))))
 
 (defmethod perform ((op test-op) (system (eql (find-system :cl-spread-test))))
-  (funcall (find-symbol "RUN-TESTS" :lift) :config :generic))
+  (eval (read-from-string
+	 "(SPREAD:WITH-DAEMON (:PORT (ASDF:COMPONENT-PROPERTY
+                                       (ASDF:FIND-SYSTEM :CL-SPREAD-TEST) :PORT))
+            (LIFT:RUN-TESTS :CONFIG :GENERIC))")))

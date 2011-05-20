@@ -35,7 +35,8 @@
 (in-package :spread.test)
 
 (deftestsuite root ()
-  ((daemon (asdf:component-property (asdf:find-system :cl-spread-test)
-				    :spread-daemon)))
+  ((daemon (format nil "~D"
+		   (asdf:component-property
+		    (asdf:find-system :cl-spread-test) :port))))
   (:documentation
    "Root unit test suite for the cl-spread system."))
