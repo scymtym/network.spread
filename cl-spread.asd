@@ -55,7 +55,10 @@ spread group communication system."
 					    "protocol" "variables"))
 			      (:file       "macros"
 			       :depends-on ("package"
-					    "connection")))))
+					    "connection"))
+
+			      (:file       "daemon"
+			       :depends-on ("package")))))
   :in-order-to ((test-op (test-op :cl-spread-test))))
 
 (defsystem :cl-spread-test

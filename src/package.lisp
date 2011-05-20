@@ -77,6 +77,11 @@
    :with-connection
    :with-group)
 
+  ;; Spread daemon
+  (:export
+   :start-daemon :stop-daemon
+   :with-daemon)
+
   (:documentation
    "This package contains a Common Lisp interface to the spread group
 communication system."))
