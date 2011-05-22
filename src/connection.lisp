@@ -91,8 +91,12 @@ connection can participate in zero or more spread groups."))
 (defmethod receive ((connection connection)
 		    &key
 		    (block? t))
+  ;; Do not enter/break out of loop when non-blocking and no messages
+  ;; queued.
   (iter (while (or block? (%poll (slot-value connection 'handle))))
+	;; Receive next message, blocking if necessary.
 	(for message next (%receive (slot-value connection 'handle)))
+	;; Return regular messages, run hooks for membership messages.
 	(if (eq (first message) :regular)
 	    (return (values-list (rest message)))
 	    (bind (((type group members) message)
