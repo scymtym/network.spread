@@ -215,9 +215,13 @@
   send
 
   (with-connection (sender daemon)
+    ;; Single destination
     (send sender "rsb://example/informer" "foo")
 
+    ;; Single destination, but dispatched to broadcast method.
     (send sender '("group1") "bar")
+
+    ;; Multiple destinations.
     (send sender '("group1" "group2") "bar")))
 
 (addtest (connection-root
@@ -251,9 +255,11 @@
   (let ((connection (connect daemon)))
     (disconnect connection)
 
+    ;; Single destination.
     (ensure-condition 'spread-error
       (send connection "does-not-matter" "foo"))
 
+    ;; Multiple destinations.
     (ensure-condition 'spread-error
       (send connection '("foo" "bar") "foo"))))
 
