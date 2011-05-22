@@ -297,3 +297,14 @@ be send but larger messages signal an error.")
 	  (ensure-condition 'message-too-long
 	    (send sender "message-size-limit"
 		  (make-message (1+ +maximum-message-data-length+)))))))))
+
+(addtest (connection-root
+          :documentation
+	  "Test the `print-object' method on `connection'.")
+  print
+
+  (with-connection (connection daemon)
+    (ensure
+     (not (emptyp
+	   (with-output-to-string (stream)
+	     (format stream "~A" connection)))))))
