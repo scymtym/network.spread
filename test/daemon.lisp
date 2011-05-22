@@ -30,7 +30,7 @@
 `start-daemon' and `stop-daemon' respectively.")
   smoke
 
-  (let ((daemon (start-daemon :port (+ port 1))))
+  (let ((daemon (start-daemon :port (+ port 3))))
     (ensure (not (null daemon)))
     (stop-daemon daemon)))
 
@@ -40,6 +40,6 @@
 identical ports are detected and reported.")
   startup-failure
 
-    (with-daemon (:port (+ port 2))
+    (with-daemon (:port (+ port 6))
       (ensure-condition 'error
-	(with-daemon (:port (+ port 2))))))
+	(with-daemon (:port (+ port 6))))))
