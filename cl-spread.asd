@@ -84,6 +84,8 @@ spread group communication system."
 			      (:file       "macros"
 			       :depends-on ("package"))
 			      (:file       "variables"
+			       :depends-on ("package"))
+			      (:file       "daemon"
 			       :depends-on ("package")))))
   :in-order-to ((test-op (load-op :cl-spread-test))))
 
