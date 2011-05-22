@@ -36,10 +36,13 @@
 	      "Spread_Segment ~A:~A {~%    ~A ~A~%}"
 	      broadcast-address port host host-address))
     ;; Start a spread daemon that uses the configuration file.
-    (let ((process (sb-ext:run-program
-		    program `("-n" ,host "-c" ,config-filename)
-		    :search t
-		    :wait   nil)))
+    (let* ((output  (make-string-output-stream))
+	   (process (sb-ext:run-program
+		     program `("-n" ,host "-c" ,config-filename)
+		     :output output
+		     :error  output
+		     :search t
+		     :wait   nil)))
       ;; Store the port number and configuration file name in the
       ;; process object.
       (setf (getf (sb-ext:process-plist process) :port)
@@ -50,11 +53,18 @@
       ;; whether it died in the meantime.
       (sleep 5)
       (unless (sb-ext:process-alive-p process)
-	(error "~@<Spread daemon (~S) failed to start with parameters ~{~{~A = ~S~}~^, ~}.~@:>"
-	       program `((:port              ,port)
-			 (:host              ,host)
-			 (:host-address      ,host-address)
-			 (:broadcast-address ,broadcast-address))))
+	(%cleanup-after-spread-daemon port config-filename)
+	(sb-ext:process-wait process)
+	(error "~@<Spread daemon (executable ~S) failed to start with ~
+exit code ~D. Parameters were ~_~{~{~A = ~S~}~^, ~_~}. ~_Spread said:~
+~&~A~@:>"
+	       program
+	       (sb-ext:process-exit-code process)
+	       `((:port              ,port)
+		 (:host              ,host)
+		 (:host-address      ,host-address)
+		 (:broadcast-address ,broadcast-address))
+	       (get-output-stream-string output)))
       ;; If everything looks good, return the process object.
       process)))
 
@@ -64,14 +74,11 @@ behind."
   (let ((pid             (sb-ext:process-pid process))
 	(port            (getf (sb-ext:process-plist process) :port))
 	(config-filename (getf (sb-ext:process-plist process) :config-file)))
-    ;; Send a SIGINT signal to the process and wait for it to die.
+    ;; Send a SIGINT signal to the process and wait for it to die. Do
+    ;; some cleanup afterwards.
     (sb-posix:kill pid sb-posix:SIGINT)
     (sb-ext:process-wait process)
-    ;; Clean up the socket and the configuration file.
-    (ignore-errors
-      (delete-file config-filename))
-    (ignore-errors
-      (delete-file (format nil "/tmp/~A" port)))
+    (%cleanup-after-spread-daemon port config-filename)
     (values)))
 
 (defmacro with-daemon ((&key
@@ -93,3 +100,15 @@ behind."
        (unwind-protect
 	    (progn ,@body)
 	 (stop-daemon ,process-var)))))
+
+
+;;; Utility functions
+;;
+
+(defun %cleanup-after-spread-daemon (port config-filename)
+  "Clean up the socket corresponding to PORT and the configuration
+file CONFIG-FILENAME."
+  (ignore-errors
+    (delete-file config-filename))
+  (ignore-errors
+    (delete-file (format nil "/tmp/~A" port))))
