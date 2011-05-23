@@ -87,7 +87,7 @@
 
   (:endian-reserved      #x80000080))
 
-(defconstant +max-message+    100000
+(defconstant +max-message+    140000
   "The maximum size of a single message.")
 
 (defconstant +max-group-name+ 32
