@@ -215,7 +215,7 @@
 			      (num-groups      '(:pointer :int))
 			      (message-type1   '(:pointer :int16))
 			      (endian-mismatch '(:pointer :int))
-			      (buffer          '(:array :uchar 100000))) ;;+max-message+)))
+			      (buffer          '(:array :uchar 140000))) ;;+max-message+)))
     (cffi:with-foreign-strings ((groups (make-string (* +max-groups+ +max-group-name+)))
 				(sender (make-string +max-group-name+)))
       (setf (cffi:mem-ref service-type :int) 0)
