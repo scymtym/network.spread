@@ -43,6 +43,9 @@ spread group communication system."
 							  (when value (read-from-string value)))
 						 4803))
 		(:default-daemon-program . #.(or #+sbcl (sb-posix:getenv "SPREAD_DAEMON_PROGRAM")
+						 #+sbcl (let ((root (sb-posix:getenv "SPREAD_ROOT")))
+							  (when root
+							    (format nil "~A/sbin/spread" root)))
 						 "spread")))
   :components  ((:module     "src"
 		 :components ((:file       "package")
