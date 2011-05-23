@@ -211,34 +211,37 @@
        (%signal-error "Error polling" result)))))
 
 (defun %receive (handle)
-  (cffi:with-foreign-objects ((service-type    '(:pointer message-type))
-			      (num-groups      '(:pointer :int))
-			      (message-type1   '(:pointer :int16))
-			      (endian-mismatch '(:pointer :int))
-			      (buffer          '(:array :uchar 140000))) ;;+max-message+)))
-    (cffi:with-foreign-strings ((groups (make-string (* +max-groups+ +max-group-name+)))
-				(sender (make-string +max-group-name+)))
-      (setf (cffi:mem-ref service-type :int) 0)
-      (let ((result (spread-receive handle
-				    service-type ;; for input: 0 or DROP-RECV
-				    sender
-				    +max-groups+ num-groups groups
-				    message-type1
-				    endian-mismatch
-				    +max-message+ buffer)))
-	(cond
-	  ;; Positive result -> process message
-	  ((not (minusp result))
-	   (funcall (cond
-		      ((plusp (logand (cffi:mem-ref service-type :int16) #x3f)) ;; TODO ugly
-		       #'%process-regular-message)
-		      (t
-		       #'%process-membership-message))
-		    service-type sender num-groups groups result buffer))
+  (let ((buffer (make-array +max-message+
+			    :element-type '(unsigned-byte 8)
+			    :adjustable   nil)))
+    (cffi:with-pointer-to-vector-data (buffer1 buffer)
+      (cffi:with-foreign-objects ((service-type    '(:pointer message-type))
+				  (num-groups      '(:pointer :int))
+				  (message-type1   '(:pointer :int16))
+				  (endian-mismatch '(:pointer :int)))
+	(cffi:with-foreign-strings ((groups (make-string (* +max-groups+ +max-group-name+)))
+				    (sender (make-string +max-group-name+)))
+	  (setf (cffi:mem-ref service-type :int) 0)
+	  (let ((result (spread-receive handle
+					service-type ;; for input: 0 or DROP-RECV
+					sender
+					+max-groups+ num-groups groups
+					message-type1
+					endian-mismatch
+					+max-message+ buffer1)))
+	    (cond
+	      ;; Positive result -> process message
+	      ((not (minusp result))
+	       (funcall (cond
+			  ((plusp (logand (cffi:mem-ref service-type :int16) #x3f)) ;; TODO ugly
+			   #'%process-regular-message)
+			  (t
+			   #'%process-membership-message))
+			service-type sender num-groups groups result buffer))
 
-	  ;; Negative result -> error
-	  (t
-	   (%signal-error "Error receiving" result)))))))
+	      ;; Negative result -> error
+	      (t
+	       (%signal-error "Error receiving" result)))))))))
 
 (defun %process-regular-message (service-type sender num-groups groups result buffer) ;; TODO message-type
   (declare (ignore service-type))
@@ -246,8 +249,7 @@
   (let ((num-groups (cffi:mem-ref num-groups :int)))
     (list
      :regular
-     (coerce (cffi::foreign-array-to-lisp buffer `(:array :uchar ,result))
-	     'octet-vector)
+     (subseq buffer 0 result)
      ;; TODO do not convert these if they are not required
      (cffi:convert-from-foreign sender :string)
      (if (not (minusp num-groups))
@@ -270,7 +272,7 @@
 			  (values)) %send-one))
 
 (defun %send-one (handle destination data)
-  (cffi::with-foreign-array (message data `(:array :uchar ,(length data)))
+  (cffi:with-pointer-to-vector-data (message data)
     (let ((result (spread-multicast handle
 				    2          ;; service-type
 				    destination
@@ -294,7 +296,7 @@
 			    (collect (make-list
 				      (- +max-group-name+ (length destination))
 				      :initial-element #\Nul)))))
-    (cffi::with-foreign-array (message data `(:array :uchar ,(length data)))
+    (cffi:with-pointer-to-vector-data (message data)
       (let ((result (spread-multigroup-multicast handle
 						 2          ;; service-type
 						 (length destinations) groups
