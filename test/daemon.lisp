@@ -40,6 +40,7 @@
 identical ports are detected and reported.")
   startup-failure
 
-    (with-daemon (:port (+ port 6))
-      (ensure-condition 'error
-	(with-daemon (:port (+ port 6))))))
+  (with-daemon (:port (+ port 6))
+    (ensure-condition 'failed-to-start-daemon
+      (with-daemon (:port        (+ port 6)
+		    :num-retries 1)))))
