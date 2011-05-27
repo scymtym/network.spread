@@ -114,9 +114,9 @@ daemon (executable ~S) with parameters ~_~{~{~A = ~S~}~^, ~_~}.~@:>"
 	   (go :start))))
     result))
 
-(define-start-daemon-function start-daemon/retry ((num-retries 4)
+(define-start-daemon-function start-daemon/retry ((num-attempts 4)
 						  (retry-delay 10))
-    "This function makes NUM-RETRIES attempts to start the Spread
+    "This function makes NUM-ATTEMPTS attempts to start the Spread
 daemon, waiting RETRY-DELAY seconds between attempts. If the final
 attempt fails, an `failed-to-start-daemon' error is signaled."
   (let ((attempt 1))
@@ -125,15 +125,15 @@ attempt fails, an `failed-to-start-daemon' error is signaled."
 	  #'(lambda (condition)
 	      (declare (ignore condition))
 	      (let ((restart (find-restart 'retry)))
-		(when (and restart (<= attempt num-retries))
+		(when (and restart (< attempt num-attempts))
 		  (warn "~@<Spread daemon failed to start on ~:r ~
 attempt~:[.~;; retrying.~]~@:>"
-			attempt (< attempt num-retries))
+			attempt (< attempt num-attempts))
 		  (sleep retry-delay)
 		  (incf attempt)
 		  (invoke-restart restart))))))
       (apply #'start-daemon
-	     (remove-from-plist args :num-retries :retry-delay)))))
+	     (remove-from-plist args :num-attempts :retry-delay)))))
 
 (defun stop-daemon (process)
   "Stop the spread daemon PROCESS and clean the mess it leaves
@@ -155,7 +155,7 @@ behind."
 			(host-address      "127.0.0.1")
 			(broadcast-address "127.0.0.255")
 			(wait              5)
-			(num-retries       4)
+			(num-attempts      4)
 			(retry-delay       10))
 		       &body body)
   "Execute BODY with a Spread daemon using the specified parameters
@@ -169,7 +169,7 @@ parameters."
 			  :host-address      ,host-address
 			  :broadcast-address ,broadcast-address
 			  :wait              ,wait
-			  :num-retries       ,num-retries
+			  :num-attempts      ,num-attempts
 			  :retry-delay       ,retry-delay)))
        (declare (ignorable ,process-var))
        (unwind-protect
