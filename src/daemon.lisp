@@ -19,21 +19,53 @@
 
 (in-package :spread)
 
-(defun start-daemon (&key
-		     (port              *default-port*)
-		     (program           *default-daemon-program*)
-		     (host              "localhost")
-		     (host-address      "127.0.0.1")
-		     (broadcast-address "127.0.0.255"))
-  "Start a spread daemon with the specified parameters and return the process."
+(defvar *daemon-parameters*
+  '((port              *default-port*)
+    (program           *default-daemon-program*)
+    (host              "localhost")
+    (host-address      "127.0.0.1")
+    (broadcast-address "127.0.0.255")
+    (wait              5))
+  "List of keyword parameter names and default values for
+start-daemon* functions.")
+
+(defmacro define-start-daemon-function (name (&rest extra-args)
+					doc
+					&body body)
+  "Define a \"start-daemon\" function named NAME with body BODY that
+takes keyword arguments EXTRA-ARGS in addition to those defined in
+`*daemon-parameters*'. DOC is concatenated with a default
+documentation string."
+  `(defun ,name (&rest args
+		 &key
+		 ,@*daemon-parameters*
+		 ,@extra-args)
+     (declare (ignorable args program wait))
+     ,(concatenate
+       'string
+       "Start a spread daemon with the specified parameters and return
+the process object. If the attempt fails, an `failed-to-start-daemon'
+error is signaled."
+       (unless (emptyp doc) " ")
+       doc)
+     (flet ((collect-daemon-options ()
+	      `((:port              ,port)
+		(:host              ,host)
+		(:host-address      ,host-address)
+		(:broadcast-address ,broadcast-address))))
+       (declare (ignorable (function collect-daemon-options)))
+       ,@body)))
+
+(define-start-daemon-function start-daemon/no-restart ()
+  ""
   ;; Generate a randomized configuration file name.
   (let ((config-filename (format nil "/tmp/spread-~8,'0X.conf"
 				 (random (ash 1 (* 8 4))))))
     ;; Write the specified configuration to that file.
     (with-output-to-file (stream config-filename
-			  :if-exists :supersede)
+				 :if-exists :supersede)
       (format stream
-	      "Spread_Segment ~A:~A {~%    ~A ~A~%}"
+	      "Spread_Segment ~A:~A {~%~4T~A ~A~%}"
 	      broadcast-address port host host-address))
     ;; Start a spread daemon that uses the configuration file.
     (let* ((output  (make-string-output-stream))
@@ -51,7 +83,7 @@
 	    config-filename)
       ;; Give the spread daemon five seconds to start up then check
       ;; whether it died in the meantime.
-      (sleep 5)
+      (sleep wait)
       (unless (sb-ext:process-alive-p process)
 	(%cleanup-after-spread-daemon port config-filename)
 	(sb-ext:process-wait process)
@@ -62,6 +94,45 @@
 	       :output    (get-output-stream-string output)))
       ;; If everything looks good, return the process object.
       process)))
+
+(define-start-daemon-function start-daemon ()
+    "This function establishes a restart called `retry' around the
+attempt to start the Spread daemon. Invoking the restart will cause
+another attempt with identical options to be made."
+  (let (result)
+    (tagbody
+     :start
+       (restart-case
+	   (setf result (apply #'start-daemon/no-restart args))
+	 (retry ()
+	   :report (lambda (stream)
+		     (format stream "~@<Retry starting the Spread ~
+daemon (executable ~S) with parameters ~_~{~{~A = ~S~}~^, ~_~}.~@:>"
+			     program
+			     (collect-daemon-options)))
+	   (go :start))))
+    result))
+
+(define-start-daemon-function start-daemon/retry ((num-retries 4)
+						  (retry-delay 10))
+    "This function makes NUM-RETRIES attempts to start the Spread
+daemon, waiting RETRY-DELAY seconds between attempts. If the final
+attempt fails, an `failed-to-start-daemon' error is signaled."
+  (let ((attempt 1))
+    (handler-bind
+	((failed-to-start-daemon
+	  #'(lambda (condition)
+	      (declare (ignore condition))
+	      (let ((restart (find-restart 'retry)))
+		(when (and restart (<= attempt num-retries))
+		  (warn "~@<Spread daemon failed to start on ~:r ~
+attempt~:[.~;; retrying.~]~@:>"
+			attempt (< attempt num-retries))
+		  (sleep retry-delay)
+		  (incf attempt)
+		  (invoke-restart restart))))))
+      (apply #'start-daemon
+	     (remove-from-plist args :num-retries :retry-delay)))))
 
 (defun stop-daemon (process)
   "Stop the spread daemon PROCESS and clean the mess it leaves
@@ -81,16 +152,24 @@ behind."
 			(program           '*default-daemon-program*)
 			(host              "localhost")
 			(host-address      "127.0.0.1")
-			(broadcast-address "127.0.0.255"))
+			(broadcast-address "127.0.0.255")
+			(wait              5)
+			(num-retries       4)
+			(retry-delay       10))
 		       &body body)
-  "Execute BODY with a spread using the specified parameters running."
+  "Execute BODY with a Spread daemon using the specified parameters
+running. see `start-daemon/retry' for an explanation of the
+parameters."
   (with-unique-names (process-var)
-    `(let ((,process-var (start-daemon
+    `(let ((,process-var (start-daemon/retry
 			  :port              ,port
 			  :program           ,program
 			  :host              ,host
 			  :host-address      ,host-address
-			  :broadcast-address ,broadcast-address)))
+			  :broadcast-address ,broadcast-address
+			  :wait              ,wait
+			  :num-retries       ,num-retries
+			  :retry-delay       ,retry-delay)))
        (declare (ignorable ,process-var))
        (unwind-protect
 	    (progn ,@body)

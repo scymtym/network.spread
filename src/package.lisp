@@ -88,7 +88,8 @@
 
   ;; Spread daemon
   (:export
-   :start-daemon :stop-daemon
+   :start-daemon/no-restart :start-daemon :start-daemon/retry
+   :stop-daemon
    :with-daemon)
 
   (:documentation
