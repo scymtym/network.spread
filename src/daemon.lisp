@@ -19,15 +19,16 @@
 
 (in-package :spread)
 
-(defvar *daemon-parameters*
-  '((port              *default-port*)
-    (program           *default-daemon-program*)
-    (host              "localhost")
-    (host-address      "127.0.0.1")
-    (broadcast-address "127.0.0.255")
-    (wait              5))
-  "List of keyword parameter names and default values for
-start-daemon* functions.")
+(eval-when (:compile-toplevel :load-toplevel :execute)
+ (defvar *daemon-parameters*
+   '((port              *default-port*)
+     (program           *default-daemon-program*)
+     (host              "localhost")
+     (host-address      "127.0.0.1")
+     (broadcast-address "127.0.0.255")
+     (wait              5))
+   "List of keyword parameter names and default values for
+start-daemon* functions."))
 
 (defmacro define-start-daemon-function (name (&rest extra-args)
 					doc
