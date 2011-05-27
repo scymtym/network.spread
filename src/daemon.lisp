@@ -55,16 +55,11 @@
       (unless (sb-ext:process-alive-p process)
 	(%cleanup-after-spread-daemon port config-filename)
 	(sb-ext:process-wait process)
-	(error "~@<Spread daemon (executable ~S) failed to start with ~
-exit code ~D. Parameters were ~_~{~{~A = ~S~}~^, ~_~}. ~_Spread said:~
-~&~A~@:>"
-	       program
-	       (sb-ext:process-exit-code process)
-	       `((:port              ,port)
-		 (:host              ,host)
-		 (:host-address      ,host-address)
-		 (:broadcast-address ,broadcast-address))
-	       (get-output-stream-string output)))
+	(error 'failed-to-start-daemon
+	       :program   program
+	       :exit-code (sb-ext:process-exit-code process)
+	       :options   (collect-daemon-options)
+	       :output    (get-output-stream-string output)))
       ;; If everything looks good, return the process object.
       process)))
 

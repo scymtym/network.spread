@@ -43,7 +43,13 @@
    :spread-error-name
 
    :message-too-long
-   :message-too-long-data)
+   :message-too-long-data
+
+   :failed-to-start-daemon
+   :failed-to-start-daemon-program
+   :failed-to-start-daemon-exit-code
+   :failed-to-start-daemon-options
+   :failed-to-start-daemon-output)
 
   ;; Restarts
   (:export

@@ -64,11 +64,11 @@ spread group communication system."
 					    "conditions" "ffi"
 					    "protocol" "variables"))
 			      (:file       "macros"
-			       :depends-on ("package"
-					    "connection"))
+			       :depends-on ("package" "connection"))
 
 			      (:file       "daemon"
-			       :depends-on ("package" "variables")))))
+			       :depends-on ("package" "conditions"
+					    "variables")))))
   :in-order-to ((test-op (test-op :cl-spread-test))))
 
 (defsystem :cl-spread-test
