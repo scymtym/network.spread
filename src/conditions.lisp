@@ -84,7 +84,7 @@ octets."))
 ;;; Daemon-related conditions
 ;;
 
-(define-condition failed-to-start-daemon (spread-error)
+(define-condition failed-to-start-daemon (error)
   ((program   :initarg  :program
 	      :type     string
 	      :reader   failed-to-start-daemon-program
