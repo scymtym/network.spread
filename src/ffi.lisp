@@ -211,9 +211,10 @@
        (%signal-error "Error polling" result)))))
 
 (defun %receive (handle)
-  (let ((buffer (make-array +max-message+
-			    :element-type '(unsigned-byte 8)
-			    :adjustable   nil)))
+  (declare (optimize (speed 3) (safety 0) (debug 0))) ;; SBCL won't do stack allocation otherwise
+  (let ((buffer  (make-array +max-message+
+			    :element-type '(unsigned-byte 8))))
+    (declare (dynamic-extent buffer))
     (cffi:with-pointer-to-vector-data (buffer1 buffer)
       (cffi:with-foreign-objects ((service-type    '(:pointer message-type))
 				  (num-groups      '(:pointer :int))
@@ -242,6 +243,12 @@
 	      ;; Negative result -> error
 	      (t
 	       (%signal-error "Error receiving" result)))))))))
+
+(declaim (ftype (function (t t t t fixnum octet-vector) list)
+		%process-regular-message
+		%process-membership-message)
+	 (inline %process-regular-message
+		 %process-membership-message))
 
 (defun %process-regular-message (service-type sender num-groups groups result buffer) ;; TODO message-type
   (declare (ignore service-type))
