@@ -66,10 +66,17 @@
    :*incoming-stream*
    :*outgoing-stream*)
 
+  ;; Spread protocol
   (:export
    :connect :disconnect
+
    :join    :leave
+
    :send    :receive)
+
+  ;; Protocol for sending raw bytes
+  (:export
+   :send-bytes)
 
   ;; Class `connection'
   (:export

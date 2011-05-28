@@ -80,7 +80,10 @@ connection can participate in zero or more spread groups."))
   (leave connection (slot-value connection 'groups)))
 
 (defmethod receive :around ((connection connection)
-			    &key &allow-other-keys)
+			    &key
+			    (block? t))
+  (declare (ignore block?))
+
   (if *incoming-stream*
       (bind (((:values buffer sender recipients) (call-next-method)))
 	(format *incoming-stream* "~@<~{~2,'0X~^ ~}~@:>"
@@ -107,9 +110,9 @@ connection can participate in zero or more spread groups."))
 		(run-hook (object-hook connection hook)
 			  group members))))))
 
-(defmethod send :around ((connection  connection)
-			 (destination t)
-			 (data        simple-array))
+(defmethod send-bytes :around ((connection  connection)
+			       (destination t)
+			       (data        simple-array))
   (when (and *outgoing-stream*
 	     (typep data 'octet-vector))
     (format *outgoing-stream* "~@<~{~2,'0X~^ ~}~@:>"
@@ -121,12 +124,22 @@ connection can participate in zero or more spread groups."))
 
   (call-next-method))
 
+(defmethod send-bytes ((connection  connection)
+		       (destination string)
+		       (data        simple-array))
+  (%send-one (slot-value connection 'handle) destination data))
+
+(defmethod send-bytes ((connection  connection)
+		       (destination list)
+		       (data        simple-array))
+  (%send-multiple (slot-value connection 'handle) destination data))
+
 (defmethod send ((connection  connection)
 		 (destination string)
 		 (data        simple-array))
   (check-type data octet-vector)
 
-  (%send-one (slot-value connection 'handle) destination data))
+  (send-bytes connection destination data))
 
 (defmethod send ((connection  connection)
 		 (destination list)
@@ -134,18 +147,21 @@ connection can participate in zero or more spread groups."))
   (check-type data octet-vector)
 
   (if (length= 1 destination)
-      (%send-one (slot-value connection 'handle) (first destination) data)
-      (%send-multiple (slot-value connection 'handle) destination data)))
+      (send-bytes connection (first destination) data)
+      (send-bytes connection destination data)))
 
 (defmethod send ((connection  connection)
 		 (destination string)
 		 (data        string))
-  (send connection destination (sb-ext:string-to-octets data)))
+  (send-bytes connection destination (sb-ext:string-to-octets data)))
 
 (defmethod send ((connection  connection)
 		 (destination list)
 		 (data        string))
-  (send connection destination (sb-ext:string-to-octets data)))
+  (let ((octets (sb-ext:string-to-octets data)))
+    (if (length= 1 destination)
+	(send-bytes connection (first destination) octets)
+	(send-bytes connection destination octets))))
 
 (defmethod print-object ((object connection) stream)
   (with-slots (handle name groups) object

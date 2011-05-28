@@ -42,6 +42,11 @@ GROUP."))
    "Send DATA to the spread group designated by DESTINATION within the
 spread session in which CONNECTION participates."))
 
+(defgeneric send-bytes (connection destination data)
+  (:documentation
+   "Like `send', but data has to be of type `octet-vector' and other
+checks are also omitted."))
+
 (defgeneric receive (connection
 		     &key
 		     block?)
