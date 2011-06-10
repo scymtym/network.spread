@@ -26,6 +26,7 @@
      (host              "localhost")
      (host-address      "127.0.0.1")
      (broadcast-address "127.0.0.255")
+     (reuse-socket?     t)
      (wait              5))
    "List of keyword parameter names and default values for
 start-daemon* functions."))
@@ -53,7 +54,8 @@ error is signaled."
 	      `((:port              ,port)
 		(:host              ,host)
 		(:host-address      ,host-address)
-		(:broadcast-address ,broadcast-address))))
+		(:broadcast-address ,broadcast-address)
+		(:reuse-socket?     ,reuse-socket?))))
        (declare (ignorable (function collect-daemon-options)))
        ,@body)))
 
@@ -66,8 +68,8 @@ error is signaled."
     (with-output-to-file (stream config-filename
 				 :if-exists :supersede)
       (format stream
-	      "Spread_Segment ~A:~A {~%~4T~A ~A~%}"
-	      broadcast-address port host host-address))
+	      "Spread_Segment ~A:~A {~%~4T~A ~A~%}~:[~;~%~%SocketPortReuse = ON~%~]~%"
+	      broadcast-address port host host-address reuse-socket?))
     ;; Start a spread daemon that uses the configuration file.
     (let* ((output  (make-string-output-stream))
 	   (process (sb-ext:run-program
@@ -154,6 +156,7 @@ behind."
 			(host              "localhost")
 			(host-address      "127.0.0.1")
 			(broadcast-address "127.0.0.255")
+			(reuse-socket?     t)
 			(wait              5)
 			(num-attempts      4)
 			(retry-delay       10))
@@ -168,6 +171,7 @@ parameters."
 			  :host              ,host
 			  :host-address      ,host-address
 			  :broadcast-address ,broadcast-address
+			  :reuse-socket?     ,reuse-socket?
 			  :wait              ,wait
 			  :num-attempts      ,num-attempts
 			  :retry-delay       ,retry-delay)))
