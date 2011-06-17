@@ -68,7 +68,11 @@ spread group communication system."
 
 			      (:file       "daemon"
 			       :depends-on ("package" "conditions"
-					    "variables")))))
+					    "variables"))
+
+			      #+sbcl
+			      (:file       "fix-signal-handlers"
+			       :depends-on ("protocol")))))
   :in-order-to ((test-op (test-op :cl-spread-test))))
 
 (defsystem :cl-spread-test
