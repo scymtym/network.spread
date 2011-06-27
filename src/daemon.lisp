@@ -27,7 +27,7 @@
      (host-address      "127.0.0.1")
      (broadcast-address "127.0.0.255")
      (reuse-socket?     t)
-     (wait              5))
+     (wait              2))
    "List of keyword parameter names and default values for
 start-daemon* functions."))
 
@@ -50,6 +50,8 @@ the process object. If the attempt fails, an `failed-to-start-daemon'
 error is signaled."
        (unless (emptyp doc) " ")
        doc)
+     (when (eq port :random)
+       (setf port (+ 1024 (random (- 65535 1024)))))
      (flet ((collect-daemon-options ()
 	      `((:port              ,port)
 		(:host              ,host)
@@ -114,7 +116,8 @@ daemon (executable ~S) with parameters ~_~{~{~A = ~S~}~^, ~_~}.~@:>"
 			     program
 			     (collect-daemon-options)))
 	   (go :start))))
-    result))
+    (values result (format nil "~D~:[@~A~;~]"
+			   port (string= host "localhost") host))))
 
 (define-start-daemon-function start-daemon/retry ((num-attempts 4)
 						  (retry-delay 10))
