@@ -191,7 +191,7 @@ connection attempt succeeds, a `connection' instance is returned. "
 	   (setf result (call-next-method daemon))
 	 (retry ()
 	   :report (lambda (stream)
-		     (format stream "~@<Retry connecting to the spread ~
+		     (format stream "~@<Retry connecting to the Spread ~
 segment designated by ~S~@:>"
 			     daemon))
 	   (go retry))
@@ -200,7 +200,9 @@ segment designated by ~S~@:>"
 			  (format *query-io* "Specify daemon: ")
 			  (force-output *query-io*)
 			  (list (read-line *query-io*)))
-	   :report "Retry connecting to the spread segment with a different daemon designator."
+	   :report (lambda (stream)
+		     (format stream "~@<Retry connecting to the Spread ~
+segment with a different daemon designator.~@:>"))
 	   (setf daemon new-daemon)
 	   (go retry))))
     result))
