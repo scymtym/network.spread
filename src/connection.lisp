@@ -1,4 +1,4 @@
-;;; connection.lisp ---
+;;; connection.lisp --- Class representing connections to the Spread network.
 ;;
 ;; Copyright (C) 2011 Jan Moringen
 ;;
@@ -23,7 +23,8 @@
   ((handle     :initarg  :handle
 	       :type     integer
 	       :documentation
-	       "")
+	       "The handle of this connection as assigned by the
++Spread daemon.")
    (name       :initarg  :name
 	       :type     string
 	       :reader   connection-name
