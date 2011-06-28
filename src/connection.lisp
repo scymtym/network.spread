@@ -48,8 +48,10 @@ segment.")
 	       :documentation
 	       ""))
   (:documentation
-   "Instances of this represent connection to spread segments. Each
-connection can participate in zero or more spread groups."))
+   "Instances of this class represent connections to Spread
+segments. Each connection can participate in zero or more Spread
+groups. Group membership is required for receiving messages addressed
+at groups, but not for sending messages to groups."))
 
 (defmethod initialize-instance :after ((instance connection) &key)
   (let ((handle (slot-value instance 'handle)))
