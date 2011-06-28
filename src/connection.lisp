@@ -20,33 +20,41 @@
 (in-package :spread)
 
 (defclass connection ()
-  ((handle     :initarg  :handle
-	       :type     integer
-	       :documentation
-	       "The handle of this connection as assigned by the
-+Spread daemon.")
-   (name       :initarg  :name
-	       :type     string
-	       :reader   connection-name
-	       :documentation
-	       "The unique name of this connection within the spread
+  ((handle      :initarg  :handle
+		:type     integer
+		:documentation
+		"The handle of this connection as assigned by the
+Spread daemon.")
+   (daemon-name :initarg  :daemon-name
+		:type     string
+		:reader  connection-daemon-name
+		:documentation
+		"The name of the Spread daemon to which this
+connection is connected.")
+   (name        :initarg  :name
+		:type     string
+		:reader   connection-name
+		:documentation
+		"The unique name of this connection within the Spread
 segment.")
-   (groups     :initarg  :groups
-	       :type     list
-	       :reader   connection-groups
-	       :initform nil
-	       :documentation
-	       "The list of groups this connection is a member of.")
-   (join-hook  :initarg  :join-hook
-	       :type     list
-	       :initform nil
-	       :documentation
-	       "")
-   (leave-hook :initarg  :leave-hook
-	       :type     list
-	       :initform nil
-	       :documentation
-	       ""))
+   (groups      :initarg  :groups
+		:type     list
+		:reader   connection-groups
+		:initform nil
+		:documentation
+		"The list of groups this connection is a member of.")
+   (join-hook   :initarg  :join-hook
+		:type     list
+		:initform nil
+		:documentation
+		"This hook is run when a Spread client joins one of the
+groups this connection is a member of.")
+   (leave-hook  :initarg  :leave-hook
+		:type     list
+		:initform nil
+		:documentation
+		"This hook is run when a Spread client leaves one of
+the groups this connection is a member of."))
   (:documentation
    "Instances of this class represent connections to Spread
 segments. Each connection can participate in zero or more Spread
@@ -181,8 +189,9 @@ at groups, but not for sending messages to groups."))
 connection attempt succeeds, a `connection' instance is returned. "
   (bind (((:values handle name) (%connect daemon :membership? t)))
     (make-instance 'connection
-		   :handle handle
-		   :name   name)))
+		   :handle      handle
+		   :daemon-name daemon
+		   :name        name)))
 
 (defmethod connect :around ((daemon string))
   "Install restarts around the connection attempt."

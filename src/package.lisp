@@ -81,6 +81,7 @@
   ;; Class `connection'
   (:export
    :connection
+   :connection-daemon-name
    :connection-name
    :connection-groups)
 
