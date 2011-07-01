@@ -98,7 +98,9 @@
   (:export
    :start-daemon/no-restart :start-daemon :start-daemon/retry
    :stop-daemon
-   :with-daemon)
+   :with-daemon
+
+   :parse-daemon-name)
 
   (:documentation
    "This package contains a Common Lisp interface to the spread group
