@@ -24,7 +24,9 @@
 ;;
 
 (cffi:define-foreign-library libspread
-  (:unix (:or "/vol/spread/lib/libspread.so.2.0"
+  (:unix (:or "libspread-without-signal-blocking.so"
+	      "/homes/jmoringe/opt/spread-4.0/lib/libspread.so.2.0"
+	      "/vol/spread/lib/libspread.so.2.0"
 	      "/vol/xcf/lib/libspread.so.2.0"
 	      "/vol/default/lib/libspread.so.2"
 	      "libspread.so"
