@@ -24,14 +24,17 @@
 ;;
 
 (cffi:define-foreign-library libspread
-  (:unix (:or "libspread-without-signal-blocking.so"
-	      "/homes/jmoringe/opt/spread-4.0/lib/libspread.so.2.0"
-	      "/vol/spread/lib/libspread.so.2.0"
-	      "/vol/xcf/lib/libspread.so.2.0"
-	      "/vol/default/lib/libspread.so.2"
-	      "libspread.so"
-	      "libspread.so.1"))
-  (t     (:default "libspread")))
+  (:darwin (:or "libspread-without-signal-blocking.dylib"
+		"libspread.dylib"
+		"libspread.2.dylib"
+		"libspread.2.0.dylib"
+		"libspread.1.dylib"))
+  (:unix   (:or "libspread-without-signal-blocking.so"
+		"libspread.so"
+		"libspread.so.2"
+		"libspread.so.2.0"
+		"libspread.so.1"))
+  (t       (:default "libspread")))
 
 (cffi:use-foreign-library libspread)
 
