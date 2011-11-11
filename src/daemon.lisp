@@ -109,6 +109,17 @@ another attempt with identical options to be made."
      :start
        (restart-case
 	   (setf result (apply #'start-daemon/no-restart args))
+	 (use-daemon (program)
+	   :report      (lambda (stream)
+			  (format stream "~@<Use a different Spread ~
+daemon executable (instead of ~S) and retry starting the daemon.~@:>"
+				  program))
+	   :interactive (lambda ()
+			  (format *query-io* "Spread daemon executable (not evaluated): ")
+			  (force-output *query-io*)
+			  (list (read-line *query-io*)))
+	   (setf (getf args :program) program)
+	   (go :start))
 	 (retry ()
 	   :report (lambda (stream)
 		     (format stream "~@<Retry starting the Spread ~
