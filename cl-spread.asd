@@ -1,6 +1,6 @@
-;;; cl-spread.asd ---
+;;; cl-spread.asd --- System definition for the cl-spread system.
 ;;
-;; Copyright (C) 2011 Jan Moringen
+;; Copyright (C) 2011, 2012 Jan Moringen
 ;;
 ;; Author: Jan Moringen <jmoringe@techfak.uni-bielefeld.de>
 ;;
@@ -93,8 +93,7 @@ spread group communication system."
 			      (:file       "variables"
 			       :depends-on ("package"))
 			      (:file       "daemon"
-			       :depends-on ("package")))))
-  :in-order-to ((test-op (load-op :cl-spread-test))))
+			       :depends-on ("package"))))))
 
 (defmethod perform ((op test-op) (system (eql (find-system :cl-spread-test))))
   (eval (read-from-string
