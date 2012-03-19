@@ -66,11 +66,12 @@ spread group communication system."
 			      (:file       "macros"
 			       :depends-on ("package" "connection"))
 
+			      #+sbcl
 			      (:file       "daemon"
 			       :depends-on ("package" "conditions"
 					    "variables"))
 
-			      #+sbcl
+			      #+(and sbcl (not win32))
 			      (:file       "fix-signal-handlers"
 			       :depends-on ("protocol")))))
   :in-order-to ((test-op (test-op :cl-spread-test))))
