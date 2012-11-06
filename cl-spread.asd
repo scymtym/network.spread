@@ -74,6 +74,7 @@ spread group communication system."
 			      #+(and sbcl (not win32))
 			      (:file       "fix-signal-handlers"
 			       :depends-on ("protocol")))))
+
   :in-order-to ((test-op (test-op :cl-spread-test))))
 
 (defsystem :cl-spread-test
@@ -82,8 +83,8 @@ spread group communication system."
   :version     "0.1.0"
   :license     "GPL3; see COPYING file for details."
   :description "This system provides unit tests for the cl-spread system."
-  :depends-on  (:cl-spread
-		:lift)
+  :depends-on  ((:version :cl-spread "0.1.0")
+		(:version :lift      "1.7.1"))
   :properties  ((:port . 6789))
   :components  ((:module     "test"
 		 :components ((:file       "package")
