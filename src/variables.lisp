@@ -1,6 +1,6 @@
-;;; variables.lisp --- Global/special variables used in cl-spread.
+;;; variables.lisp --- Global/special variables used in network.spread.
 ;;
-;; Copyright (C) 2011 Jan Moringen
+;; Copyright (C) 2011, 2012 Jan Moringen
 ;;
 ;; Author: Jan Moringen <jmoringe@techfak.uni-bielefeld.de>
 ;;
@@ -17,7 +17,7 @@
 ;; You should have received a copy of the GNU General Public License
 ;; along with this program. If not, see <http://www.gnu.org/licenses>.
 
-(in-package :spread)
+(cl:in-package #:network.spread)
 
 
 ;;;
@@ -49,14 +49,14 @@ format.")
 ;;
 
 (defparameter *default-port* (or (asdf:component-property
-				  (asdf:find-system :cl-spread)
+				  (asdf:find-system :network.spread)
 				  :default-port)
 				 4803)
   "The default port on which the Spread should listen when it is
 started via `start-daemon' or `with-daemon'.")
 
 (defparameter *default-daemon-program* (or (asdf:component-property
-					    (asdf:find-system :cl-spread)
+					    (asdf:find-system :network.spread)
 					    :default-daemon-program)
 					   "spread")
   "The default name of the program that should be executed when

@@ -1,6 +1,6 @@
-;;; package.lisp --- Package definition cl-spread system.
+;;; package.lisp --- Package definition network.spread system.
 ;;
-;; Copyright (C) 2011 Jan Moringen
+;; Copyright (C) 2011, 2012 Jan Moringen
 ;;
 ;; Author: Jan Moringen <jmoringe@techfak.uni-bielefeld.de>
 ;;
@@ -17,90 +17,90 @@
 ;; You should have received a copy of the GNU General Public License
 ;; along with this program. If not, see <http://www.gnu.org/licenses>.
 
-(cl:in-package :cl-user)
-
-(defpackage :spread
-  (:shadow :leave)
+(cl:defpackage #:network.spread
   (:use
-   :cl
-   :alexandria
-   :iterate
-   :bind
-   :hooks)
+   #:cl
+   #:alexandria
+   #:iterate
+   #:bind
+   #:hooks)
+
+  (:shadow
+   #:leave)
 
   ;; Types
   (:export
-   :octet-vector)
+   #:octet-vector)
 
   ;; Conditions
   (:export
-   :spread-error
-   :spread-error-code
+   #:spread-error
+   #:spread-error-code
 
-   :simple-spread-error
+   #:simple-spread-error
 
-   :connect-failed
-   :spread-error-name
+   #:connect-failed
+   #:spread-error-name
 
-   :message-too-long
-   :message-too-long-data
+   #:message-too-long
+   #:message-too-long-data
 
-   :failed-to-start-daemon
-   :failed-to-start-daemon-program
-   :failed-to-start-daemon-exit-code
-   :failed-to-start-daemon-options
-   :failed-to-start-daemon-output)
+   #:failed-to-start-daemon
+   #:failed-to-start-daemon-program
+   #:failed-to-start-daemon-exit-code
+   #:failed-to-start-daemon-options
+   #:failed-to-start-daemon-output)
 
   ;; Restarts
   (:export
-   :retry
-   :use-daemon)
+   #:retry
+   #:use-daemon)
 
   ;; Variables
   (:export
-   :+maximum-message-data-length+
+   #:+maximum-message-data-length+
 
-   :*default-port*
-   :*default-daemon-program*
+   #:*default-port*
+   #:*default-daemon-program*
 
-   :*incoming-stream*
-   :*outgoing-stream*)
+   #:*incoming-stream*
+   #:*outgoing-stream*)
 
   ;; Spread protocol
   (:export
-   :connect :disconnect
+   #:connect #:disconnect
 
-   :join    :leave
+   #:join    #:leave
 
-   :send    :receive)
+   #:send    #:receive)
 
   ;; Protocol for sending raw bytes
   (:export
-   :send-bytes)
+   #:send-bytes)
 
   ;; Class `connection'
   (:export
-   :connection
-   :connection-daemon-name
-   :connection-name
-   :connection-groups)
+   #:connection
+   #:connection-daemon-name
+   #:connection-name
+   #:connection-groups)
 
   ;; Hooks
   (:export
-   :join-hook :leave-hook)
+   #:join-hook #:leave-hook)
 
   ;; Convenience macros
   (:export
-   :with-connection
-   :with-group)
+   #:with-connection
+   #:with-group)
 
   ;; Spread daemon
   (:export
-   :start-daemon/no-restart :start-daemon :start-daemon/retry
-   :stop-daemon
-   :with-daemon
+   #:start-daemon/no-restart #:start-daemon #:start-daemon/retry
+   #:stop-daemon
+   #:with-daemon
 
-   :parse-daemon-name)
+   #:parse-daemon-name)
 
   (:documentation
    "This package contains a Common Lisp interface to the spread group

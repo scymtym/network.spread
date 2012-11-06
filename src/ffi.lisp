@@ -1,6 +1,6 @@
 ;;; ffi.lisp --- Spread foreign library and functions.
 ;;
-;; Copyright (C) 2011 Jan Moringen
+;; Copyright (C) 2011, 2012 Jan Moringen
 ;;
 ;; Author: Jan Moringen <jmoringe@techfak.uni-bielefeld.de>
 ;;
@@ -17,7 +17,7 @@
 ;; You should have received a copy of the GNU General Public License
 ;; along with this program. If not, see <http://www.gnu.org/licenses>.
 
-(in-package :spread)
+(cl:in-package #:network.spread)
 
 
 ;;;
@@ -360,7 +360,7 @@
 	 (etypecase value
 	   (fixnum
 	    (cffi::%foreign-enum-keyword
-	     (funcall (cffi::find-type-parser 'spread::return-value))
+	     (funcall (cffi::find-type-parser 'return-value))
 	     value :errorp t))
 	   (keyword
 	    value))))

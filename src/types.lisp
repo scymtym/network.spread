@@ -1,6 +1,6 @@
-;;; types.lisp --- Types for the cl-spread system.
+;;; types.lisp --- Types for the network.spread system.
 ;;
-;; Copyright (C) 2011 Jan Moringen
+;; Copyright (C) 2011, 2012 Jan Moringen
 ;;
 ;; Author: Jan Moringen <jmoringe@techfak.uni-bielefeld.de>
 ;;
@@ -17,7 +17,7 @@
 ;; You should have received a copy of the GNU General Public License
 ;; along with this program. If not, see <http://www.gnu.org/licenses>.
 
-(in-package :spread)
+(cl:in-package #:network.spread)
 
 (deftype octet-vector ()
   '(simple-array (unsigned-byte 8) (*)))

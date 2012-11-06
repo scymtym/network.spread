@@ -1,17 +1,17 @@
-#+TITLE:  cl-spread README
+#+TITLE:  network.spread README
 #+AUTHOR: Jan Moringen
 #+EMAIL:  jmoringe@techfak.uni-bielefeld.de
 
 * Introduction
-  The cl-spread system provides a Common Lisp wrapper for the spread
-  group communication system.
+  The network.spread system provides a Common Lisp wrapper for the
+  spread group communication system.
 * Tutorial
   When using spread, the first step usually consists in establishing a
   connection to the spread deamon. The following example demonstrates
   this for a situation in which the spread daemon is running on the
   local machine and listening on port 5103:
 #+BEGIN_SRC lisp
-  (defvar *connection* (spread:connect "5103"))
+  (defvar *connection* (network.spread:connect "5103"))
 #+END_SRC
   After a connection has been established, data can be sent and
   received. However, in order to receive data, it is necessary to join
@@ -21,9 +21,9 @@
   given connection is a member of is evident from the printed
   representation of the connection instance.
 #+BEGIN_SRC lisp
-  (spread:join *connection* "mygroup")
+  (network.spread:join *connection* "mygroup")
 
-  (spread:receive *connectoin* :block? nil)
+  (network.spread:receive *connectoin* :block? nil)
 #+END_SRC
 #+BIBLIOGRAPHY: literature apalike
 

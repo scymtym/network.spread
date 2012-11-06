@@ -1,6 +1,6 @@
 ;;; fix-signal-handlers.lisp --- Undo Spread's changes to SBCL's signal handlers.
 ;;
-;; Copyright (C) 2011 Jan Moringen
+;; Copyright (C) 2011, 2012 Jan Moringen
 ;;
 ;; Author: Jan Moringen <jmoringe@techfak.uni-bielefeld.de>
 ;;
@@ -17,7 +17,7 @@
 ;; You should have received a copy of the GNU General Public License
 ;; along with this program. If not, see <http://www.gnu.org/licenses>.
 
-(in-package :spread)
+(cl:in-package #:network.spread)
 
 (defun fix-signal-handlers ()
   "Restore signal handlers for SIGINT and SIGPIPE to their original

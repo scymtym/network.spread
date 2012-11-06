@@ -1,6 +1,6 @@
-;;; macros.lisp --- Unit tests for macros provided by the cl-spread system.
+;;; macros.lisp --- Unit tests for macros provided by the network.spread system.
 ;;
-;; Copyright (C) 2011 Jan Moringen
+;; Copyright (C) 2011, 2012 Jan Moringen
 ;;
 ;; Author: Jan Moringen <jmoringe@techfak.uni-bielefeld.de>
 ;;
@@ -17,13 +17,13 @@
 ;; You should have received a copy of the GNU General Public License
 ;; along with this program. If not, see <http://www.gnu.org/licenses>.
 
-(in-package :spread.test)
+(cl:in-package #:network.spread.test)
 
 (deftestsuite macros-root (root)
   ()
   (:documentation
-   "Unit test for the convenience macros provided by the cl-spread
-system."))
+   "Unit test for the convenience macros provided by the
+network.spread system."))
 
 (deftestsuite with-connection-root (macros-root)
   ()

@@ -1,4 +1,4 @@
-;;; cl-spread.asd --- System definition for the cl-spread system.
+;;; network.spread.asd --- System definition for the network.spread system.
 ;;
 ;; Copyright (C) 2011, 2012 Jan Moringen
 ;;
@@ -17,20 +17,20 @@
 ;; You should have received a copy of the GNU General Public License
 ;; along with this program. If not, see <http://www.gnu.org/licenses>.
 
-(cl:defpackage :cl-spread-system
+(cl:defpackage #:network.spread-system
   (:use
-   :cl
-   :asdf))
+   #:cl
+   #:asdf))
 
-(cl:in-package :cl-spread-system)
+(cl:in-package #:network.spread-system)
 
 #+sbcl (asdf:load-system :sb-posix)
 
-(defsystem :cl-spread
+(defsystem :network.spread
   :author      "Jan Moringen <jmoringe@techfak.uni-bielefeld.de>"
   :maintainer  "Jan Moringen <jmoringe@techfak.uni-bielefeld.de>"
-  :version     "0.1.0"
-  :license     "GPL3; see COPYING file for details."
+  :version     "0.2.0"
+  :license     "LLGPLv3; see COPYING file for details."
   :description "This system provides a Common Lisp interface to the
 spread group communication system."
   :depends-on  (:alexandria
@@ -75,16 +75,17 @@ spread group communication system."
 			      (:file       "fix-signal-handlers"
 			       :depends-on ("protocol")))))
 
-  :in-order-to ((test-op (test-op :cl-spread-test))))
+  :in-order-to ((test-op (test-op :network.spread-test))))
 
-(defsystem :cl-spread-test
+(defsystem :network.spread-test
   :author      "Jan Moringen <jmoringe@techfak.uni-bielefeld.de>"
   :maintainer  "Jan Moringen <jmoringe@techfak.uni-bielefeld.de>"
-  :version     "0.1.0"
+  :version     "0.2.0"
   :license     "GPL3; see COPYING file for details."
-  :description "This system provides unit tests for the cl-spread system."
-  :depends-on  ((:version :cl-spread "0.1.0")
-		(:version :lift      "1.7.1"))
+  :description "This system provides unit tests for the network.spread system."
+  :depends-on  ((:version :network.spread "0.2.0")
+
+		(:version :lift           "1.7.1"))
   :properties  ((:port . 6789))
   :components  ((:module     "test"
 		 :components ((:file       "package")
@@ -97,8 +98,9 @@ spread group communication system."
 			      (:file       "daemon"
 			       :depends-on ("package"))))))
 
-(defmethod perform ((op test-op) (system (eql (find-system :cl-spread-test))))
+(defmethod perform ((op test-op) (system (eql (find-system :network.spread-test))))
   (eval (read-from-string
-	 "(SPREAD:WITH-DAEMON (:PORT (ASDF:COMPONENT-PROPERTY
-                                       (ASDF:FIND-SYSTEM :CL-SPREAD-TEST) :PORT))
+	 "(NETWORK.SPREAD:WITH-DAEMON
+              (:PORT (ASDF:COMPONENT-PROPERTY
+                       (ASDF:FIND-SYSTEM :NETWORK.SPREAD-TEST) :PORT))
             (LIFT:RUN-TESTS :CONFIG :GENERIC))")))

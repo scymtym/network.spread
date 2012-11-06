@@ -1,6 +1,6 @@
-;;; package.lisp --- Package definition for unit tests of the cl-spread system.
+;;; package.lisp --- Package definition for unit tests of the network.spread system.
 ;;
-;; Copyright (C) 2011 Jan Moringen
+;; Copyright (C) 2011, 2012 Jan Moringen
 ;;
 ;; Author: Jan Moringen <jmoringe@techfak.uni-bielefeld.de>
 ;;
@@ -17,30 +17,33 @@
 ;; You should have received a copy of the GNU General Public License
 ;; along with this program. If not, see <http://www.gnu.org/licenses>.
 
-(cl:in-package :cl-user)
-
-(defpackage :spread.test
+(cl:defpackage #:network.spread.test
   (:use
-   :cl
-   :alexandria
-   :bind
-   :lift
+   #:cl
+   #:alexandria
+   #:bind
+   #:lift
 
-   :spread)
+   #:network.spread)
+
+  (:import-from #:network.spread
+   #:+max-group-name+)
+
   (:export
-   :root)
-  (:documentation
-   "This package contains unit tests for the cl-spread system"))
+   #:root)
 
-(in-package :spread.test)
+  (:documentation
+   "This package contains unit tests for the network.spread system"))
+
+(cl:in-package #:network.spread.test)
 
 (deftestsuite root ()
   (port
    daemon)
   (:setup
    (setf port   (asdf:component-property
-		 (asdf:find-system :cl-spread-test) :port)
+		 (asdf:find-system :network.spread-test) :port)
 	 daemon (format nil "~D" port)))
   (:timeout 20)
   (:documentation
-   "Root unit test suite for the cl-spread system."))
+   "Root unit test suite for the network.spread system."))
