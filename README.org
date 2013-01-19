@@ -1,0 +1,50 @@
+#+TITLE:       network.spread README
+#+AUTHOR:      Jan Moringen
+#+EMAIL:       jmoringe@techfak.uni-bielefeld.de
+#+DESCRIPTION:
+#+KEYWORDS:    network,communication,spread,multicast,bindings
+#+LANGUAGE:    en
+
+* Introduction
+  The =network.spread= system provides Common Lisp bindings for the
+  client library of the [[www.spread.org][Spread group communication system]].
+* Tutorial
+** Connecting
+   When using Spread, the first step usually consists in establishing
+   a connection to the Spread daemon. The following example
+   demonstrates this for a situation in which the Spread daemon is
+   running on the local machine and listening on port 5103:
+#+BEGIN_SRC lisp
+(defvar *connection* (network.spread:connect "5103"))
+#+END_SRC
+** Receiving Messages
+   After a connection has been established, data can be sent and
+   received. However, in order to receive data, it is necessary to
+   join the Spread group to which messages are sent. In the following
+   code, the previously created connection joins a Spread group called
+   ="mygroup"= and tries to receive a message. The number of groups a
+   given connection is a member of is evident from the printed
+   representation of the connection instance.
+#+BEGIN_SRC lisp
+(network.spread:join *connection* "mygroup")
+
+(network.spread:receive *connection* :block? nil)
+#+END_SRC
+** Sending Messages
+   To send data to receivers in a Spread group, the generic functions
+   =network.spread:send= and =network.spread:send-bytes= are used (the
+   delegates the actual work to the latter):
+#+BEGIN_SRC lisp
+(network.spread:send *connection* "mygroup" "mymessage")
+#+END_SRC
+   Note that it is not necessary to join a Spread group in order to
+   send messages to that group.
+
+   It is possible to send a single message to multiple groups:
+#+BEGIN_SRC lisp
+(network.spread:send *connection* '("mygroup" "othergroup") "mymessage")
+#+END_SRC
+* Settings :noexport:
+
+#+OPTIONS: H:2 num:t toc:t \n:nil @:t ::t |:t ^:t -:t f:t *:t <:t
+#+OPTIONS: TeX:t LaTeX:t skip:nil d:nil todo:t pri:nil tags:not-in-toc
