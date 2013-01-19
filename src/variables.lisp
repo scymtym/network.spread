@@ -1,6 +1,6 @@
 ;;;; variables.lisp --- Global/special variables used in network.spread.
 ;;;;
-;;;; Copyright (C) 2011, 2012 Jan Moringen
+;;;; Copyright (C) 2011, 2012, 2013 Jan Moringen
 ;;;;
 ;;;; Author: Jan Moringen <jmoringe@techfak.uni-bielefeld.de>
 
@@ -12,24 +12,6 @@
 
 (defconstant +maximum-message-data-length+ +max-message+
   "The maximum length (in bytes) of the data in a spread message.")
-
-
-;;;
-;;
-
-(declaim (special *incoming-stream*))
-
-(defvar *incoming-stream* nil
-  "When this special variable is bound to an output-stream, incoming
-data is printed onto that stream using a slightly hexdump-like
-format.")
-
-(declaim (special *outgoing-stream*))
-
-(defvar *outgoing-stream* nil
-  "When this special variable is bound to an output-stream, outgoing
-data is printed onto that stream using a slightly hexdump-like
-format.")
 
 
 ;;; Daemon-related parameters

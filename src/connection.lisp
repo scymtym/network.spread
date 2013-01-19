@@ -77,18 +77,6 @@ at groups, but not for sending messages to groups."))
 (defmethod leave ((connection connection) (group (eql t)))
   (leave connection (slot-value connection 'groups)))
 
-(defmethod receive :around ((connection connection)
-			    &key
-			    (block? t))
-  (declare (ignore block?))
-
-  (if *incoming-stream*
-      (let+ (((&values buffer sender recipients) (call-next-method)))
-	(format *incoming-stream* "~@<~{~2,'0X~^ ~}~@:>"
-		(coerce buffer 'list))
-	(values buffer sender recipients))
-      (call-next-method)))
-
 (defmethod receive ((connection connection)
 		    &key
 		    (block? t))
@@ -108,19 +96,12 @@ at groups, but not for sending messages to groups."))
 		(run-hook (object-hook connection hook)
 			  group members))))))
 
-(defmethod send-bytes :around ((connection  connection)
+(defmethod send-bytes :before ((connection  connection)
 			       (destination t)
 			       (data        simple-array))
-  (when (and *outgoing-stream*
-	     (typep data 'octet-vector))
-    (format *outgoing-stream* "~@<~{~2,'0X~^ ~}~@:>"
-	    (coerce data 'list)))
-
   (unless (<= (length data) +maximum-message-data-length+)
     (error 'message-too-long
-	   :data data))
-
-  (call-next-method))
+	   :data data)))
 
 (defmethod send-bytes ((connection  connection)
 		       (destination string)

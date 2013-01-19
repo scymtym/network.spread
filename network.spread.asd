@@ -77,15 +77,11 @@ spread group communication system."
 		(:version :lift           "1.7.1"))
   :properties  ((:port . 6789))
   :components  ((:module     "test"
+		 :serial     t
 		 :components ((:file       "package")
-			      (:file       "connection"
-			       :depends-on ("package"))
-			      (:file       "macros"
-			       :depends-on ("package"))
-			      (:file       "variables"
-			       :depends-on ("package"))
-			      (:file       "daemon"
-			       :depends-on ("package"))))))
+			      (:file       "connection")
+			      (:file       "macros")
+			      (:file       "daemon")))))
 
 (defmethod perform ((op test-op) (system (eql (find-system :network.spread-test))))
   (eval (read-from-string
