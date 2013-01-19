@@ -62,8 +62,9 @@ at groups, but not for sending messages to groups."))
 (defmethod join :after ((connection connection) (group string))
   (pushnew group (slot-value connection 'groups) :test #'string=))
 
-(defmethod join ((connection connection) (group list))
-  (map 'nil (curry #'join connection) group))
+;; Relies on the `string'-specialized method
+(defmethod join ((connection connection) (group sequence))
+  (map nil (curry #'join connection) group))
 
 (defmethod leave ((connection connection) (group string))
   (%leave (slot-value connection 'handle) group))
@@ -71,7 +72,8 @@ at groups, but not for sending messages to groups."))
 (defmethod leave :after ((connection connection) (group string))
   (removef (slot-value connection 'groups) group :test #'string=))
 
-(defmethod leave ((connection connection) (group list))
+;; Relies on the `string'-specialized method
+(defmethod leave ((connection connection) (group sequence))
   (map nil (curry #'leave connection) group))
 
 (defmethod leave ((connection connection) (group (eql t)))
@@ -108,8 +110,9 @@ at groups, but not for sending messages to groups."))
 		       (data        simple-array))
   (%send-one (slot-value connection 'handle) destination data))
 
+;; Relies on the `string'-specialized method
 (defmethod send-bytes ((connection  connection)
-		       (destination list)
+		       (destination sequence)
 		       (data        simple-array))
   (%send-multiple (slot-value connection 'handle) destination data))
 
@@ -120,13 +123,14 @@ at groups, but not for sending messages to groups."))
 
   (send-bytes connection destination data))
 
+;; Relies on the `string'-specialized method
 (defmethod send ((connection  connection)
-		 (destination list)
+		 (destination sequence)
 		 (data        simple-array))
   (check-type data octet-vector)
 
   (if (length= 1 destination)
-      (send-bytes connection (first destination) data)
+      (send-bytes connection (elt destination 0) data)
       (send-bytes connection destination data)))
 
 (defmethod send ((connection  connection)
@@ -134,12 +138,13 @@ at groups, but not for sending messages to groups."))
 		 (data        string))
   (send-bytes connection destination (sb-ext:string-to-octets data)))
 
+;; Relies on the `string'-specialized method
 (defmethod send ((connection  connection)
-		 (destination list)
+		 (destination sequence)
 		 (data        string))
   (let ((octets (sb-ext:string-to-octets data)))
     (if (length= 1 destination)
-	(send-bytes connection (first destination) octets)
+	(send-bytes connection (elt destination 0) octets)
 	(send-bytes connection destination octets))))
 
 (defmethod print-object ((object connection) stream)

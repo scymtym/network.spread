@@ -282,13 +282,13 @@
 	(t
 	 (%signal-error "Sending failed" result))))))
 
-(declaim (ftype (function (fixnum list octet-vector)
+(declaim (ftype (function (fixnum sequence octet-vector)
 			  (values)) %send-multiple))
 
 (defun %send-multiple (handle destinations data)
   (cffi:with-foreign-string
       (groups  (apply #'concatenate 'string
-		      (iter (for destination in destinations)
+		      (iter (for destination in-sequence destinations)
 			    (collect destination)
 			    (collect (make-list
 				      (- +max-group-name+ (length destination))
