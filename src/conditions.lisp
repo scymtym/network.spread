@@ -1,6 +1,6 @@
-;;;; conditions.lisp ---
+;;;; conditions.lisp --- Conditions signaled by the network.spread system.
 ;;;;
-;;;; Copyright (C) 2011, 2012 Jan Moringen
+;;;; Copyright (C) 2011, 2012, 2013 Jan Moringen
 ;;;;
 ;;;; Author: Jan Moringen <jmoringe@techfak.uni-bielefeld.de>
 
@@ -11,7 +11,8 @@
 	 :type     keyword
 	 :reader   spread-error-code
 	 :documentation
-	 ""))
+	 "Stores the keyword corresponding to the numeric error code
+returned by Spread."))
   (:report
    (lambda (condition stream)
      (format stream "~@<Spread error: ~A.~@:>"
@@ -25,11 +26,10 @@ classes."))
   ()
   (:report
    (lambda (condition stream)
-     (apply #'format stream
-	    (simple-condition-format-control   condition)
-	    (simple-condition-format-arguments condition))
-     (format stream ": ~A"
-	     (spread-error-code condition))))
+     (format stream "~?: ~A"
+	     (simple-condition-format-control   condition)
+	     (simple-condition-format-arguments condition)
+	     (spread-error-code                 condition))))
   (:documentation
    "Condition instances of this class contain a simple problem
 description and a spread error code."))
@@ -39,7 +39,8 @@ description and a spread error code."))
 	 :type     string
 	 :reader   spread-error-name
 	 :documentation
-	 ""))
+	 "Stores the name of the Spread daemon to which a connection
+has been attempted."))
   (:report
    (lambda (condition stream)
      (format stream "~@<Failed to connect to the spread daemon ~

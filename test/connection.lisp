@@ -1,6 +1,6 @@
-;;;; connection.lisp ---
+;;;; connection.lisp --- Unit tests for the connection class.
 ;;;;
-;;;; Copyright (C) 2011, 2012 Jan Moringen
+;;;; Copyright (C) 2011, 2012, 2013 Jan Moringen
 ;;;;
 ;;;; Author: Jan Moringen <jmoringe@techfak.uni-bielefeld.de>
 
@@ -126,11 +126,11 @@
 
   (with-connection (connection daemon)
     (ensure-condition 'spread-error
-      (join connection (make-string (* 2 spread::+max-group-name+)
+      (join connection (make-string (* 2 +max-group-name+)
 				    :initial-element #\a)))
 
     (ensure-condition 'spread-error
-      (leave connection (make-string (* 2 spread::+max-group-name+)
+      (leave connection (make-string (* 2 +max-group-name+)
 				     :initial-element #\a)))))
 
 (addtest (connection-root

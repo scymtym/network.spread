@@ -1,6 +1,6 @@
 ;;;; ffi.lisp --- Spread foreign library and functions.
 ;;;;
-;;;; Copyright (C) 2011, 2012 Jan Moringen
+;;;; Copyright (C) 2011, 2012, 2013 Jan Moringen
 ;;;;
 ;;;; Author: Jan Moringen <jmoringe@techfak.uni-bielefeld.de>
 
@@ -195,15 +195,13 @@
 (defun %poll (handle)
   (let ((result (spread-poll handle)))
     (cond
-      ((plusp result)
-       result)
-      ((zerop result)
-       nil)
-      (t
-       (%signal-error "Error polling" result)))))
+      ((plusp result) result)
+      ((zerop result) nil)
+      (t              (%signal-error "Error polling" result)))))
 
 (defun %receive (handle)
-  (declare (optimize (speed 3) (safety 0) (debug 0))) ;; SBCL won't do stack allocation otherwise
+  ;; SBCL won't do stack allocation otherwise
+  (declare (optimize (speed 3) (safety 0) (debug 0)))
   (let ((buffer  (make-array +max-message+
 			    :element-type '(unsigned-byte 8))))
     (declare (dynamic-extent buffer))
@@ -216,7 +214,7 @@
 				    (sender (make-string +max-group-name+)))
 	  (setf (cffi:mem-ref service-type :int) 0)
 	  (let ((result (spread-receive handle
-					service-type ;; for input: 0 or DROP-RECV
+					service-type ; for input: 0 or DROP-RECV
 					sender
 					+max-groups+ num-groups groups
 					message-type1
@@ -262,8 +260,8 @@
 	(num-groups (cffi:mem-ref num-groups :int)))
     (list
      (%type->tag type)
-     (cffi:convert-from-foreign sender :string) ;; means group
-     (if (not (minusp num-groups)) ;; group members
+     (cffi:convert-from-foreign sender :string) ; means group
+     (if (not (minusp num-groups))              ; group members
 	 (%extract-groups num-groups groups)
 	 :group-buffer-too-small))))
 
@@ -273,9 +271,9 @@
 (defun %send-one (handle destination data)
   (cffi:with-pointer-to-vector-data (message data)
     (let ((result (spread-multicast handle
-				    2          ;; service-type
+				    2          ; service-type
 				    destination
-				    0          ;; message-type
+				    0          ; message-type
 				    (length data) message)))
       (cond
 	((not (minusp result))
@@ -297,9 +295,9 @@
 				      :initial-element #\Nul)))))
     (cffi:with-pointer-to-vector-data (message data)
       (let ((result (spread-multigroup-multicast handle
-						 2          ;; service-type
+						 2          ; service-type
 						 (length destinations) groups
-						 0          ;; message-type
+						 0          ; message-type
 						 (length data) message)))
 	(cond
 	  ((not (minusp result))
@@ -325,7 +323,7 @@
     (t
      :other)))
 
-(declaim (ftype (function (non-negative-fixnum t) list) %extract-groups)
+(declaim (ftype (function (non-negative-fixnum octet-vector) list) %extract-groups)
 	 (inline %extract-groups))
 
 (defun %extract-groups (num-groups groups)

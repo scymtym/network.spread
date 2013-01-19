@@ -1,6 +1,6 @@
 ;;;; connection.lisp --- Class representing connections to the Spread network.
 ;;;;
-;;;; Copyright (C) 2011, 2012 Jan Moringen
+;;;; Copyright (C) 2011, 2012, 2013 Jan Moringen
 ;;;;
 ;;;; Author: Jan Moringen <jmoringe@techfak.uni-bielefeld.de>
 
@@ -14,7 +14,7 @@
 Spread daemon.")
    (daemon-name :initarg  :daemon-name
 		:type     string
-		:reader  connection-daemon-name
+		:reader   connection-daemon-name
 		:documentation
 		"The name of the Spread daemon to which this
 connection is connected.")
