@@ -83,7 +83,7 @@ at groups, but not for sending messages to groups."))
   (declare (ignore block?))
 
   (if *incoming-stream*
-      (bind (((:values buffer sender recipients) (call-next-method)))
+      (let+ (((&values buffer sender recipients) (call-next-method)))
 	(format *incoming-stream* "~@<~{~2,'0X~^ ~}~@:>"
 		(coerce buffer 'list))
 	(values buffer sender recipients))
@@ -100,7 +100,7 @@ at groups, but not for sending messages to groups."))
 	;; Return regular messages, run hooks for membership messages.
 	(if (eq (first message) :regular)
 	    (return (values-list (rest message)))
-	    (bind (((type group members) message)
+	    (let+ (((type group members) message)
 		   (hook (case type
 			   (:join  'join-hook)
 			   (:leave 'leave-hook))))
@@ -174,7 +174,7 @@ at groups, but not for sending messages to groups."))
 (defmethod connect ((daemon string))
   "Connect to the spread segment designated by DAEMON. If the
 connection attempt succeeds, a `connection' instance is returned. "
-  (bind (((:values handle name) (%connect daemon :membership? t)))
+  (let+ (((&values handle name) (%connect daemon :membership? t)))
     (make-instance 'connection
 		   :handle      handle
 		   :daemon-name daemon

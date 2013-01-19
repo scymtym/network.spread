@@ -1,6 +1,6 @@
 ;;;; package.lisp --- Package definition for unit tests of the network.spread system.
 ;;;;
-;;;; Copyright (C) 2011, 2012 Jan Moringen
+;;;; Copyright (C) 2011, 2012, 2013 Jan Moringen
 ;;;;
 ;;;; Author: Jan Moringen <jmoringe@techfak.uni-bielefeld.de>
 
@@ -8,7 +8,7 @@
   (:use
    #:cl
    #:alexandria
-   #:bind
+   #:let-plus
    #:lift
 
    #:network.spread)

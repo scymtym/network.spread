@@ -1,6 +1,6 @@
 ;;;; network.spread.asd --- System definition for the network.spread system.
 ;;;;
-;;;; Copyright (C) 2011, 2012 Jan Moringen
+;;;; Copyright (C) 2011, 2012, 2013 Jan Moringen
 ;;;;
 ;;;; Author: Jan Moringen <jmoringe@techfak.uni-bielefeld.de>
 
@@ -22,9 +22,11 @@
 spread group communication system."
   :depends-on  (:alexandria
 		:iterate
-		:metabang-bind ;; ok?
+		:let-plus
+
 		:cffi
 		:trivial-garbage
+
 		:cl-hooks)
   :properties  ((:default-port           . #.(or #+sbcl (let ((value (sb-posix:getenv "SPREAD_PORT")))
 							  (when value (read-from-string value)))

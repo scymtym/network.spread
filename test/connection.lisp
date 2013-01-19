@@ -267,8 +267,8 @@
 be send but larger messages signal an error.")
   message-size-limit
 
-  (bind (((:flet make-message (size))
-	  (make-string size :initial-element #\a)))
+  (flet ((make-message (size)
+	   (make-string size :initial-element #\a)))
     (with-connection (sender daemon)
       (with-connection (receiver daemon)
 	(with-group (receiver "message-size-limit")
