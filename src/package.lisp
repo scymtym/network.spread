@@ -84,6 +84,12 @@
 
    #:parse-daemon-name)
 
+  ;; Reloading of the Spread library
+  (:export
+   #:unload-spread-library
+   #:reload-spread-library
+   #:enable-reload-spread-library)
+
   (:documentation
    "This package contains a Common Lisp interface to the spread group
 communication system."))

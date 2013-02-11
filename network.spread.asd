@@ -56,6 +56,9 @@ spread group communication system."
 			      (:file       "macros"
 			       :depends-on ("package" "connection"))
 
+			      (:file       "reloading"
+			       :depends-on ("ffi"))
+
 			      #+sbcl
 			      (:file       "daemon"
 			       :depends-on ("package" "conditions"
