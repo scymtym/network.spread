@@ -92,4 +92,23 @@
 
   (:documentation
    "This package contains a Common Lisp interface to the spread group
-communication system."))
+communication system.
+
+The primary protocol consists of the following functions:
+
+* `connect'                         [generic function]
+  Connect to a Spread daemon.
+* `disconnect'                      [generic function]
+  Disconnect from a Spread daemon.
+
+* `join'                            [generic function]
+  Join a Spread multicast group.
+* `leave'                           [generic function]
+  Leave a Spread multicast group.
+
+* `send'                            [generic function]
+  Send data to one or more Spread groups.
+* `receive'                         [generic function]
+  Receive data into a freshly consed buffer.
+* `receive-into'                    [generic function]
+  Receive data into an existing buffer."))

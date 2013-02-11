@@ -34,14 +34,22 @@ segment.")
 		:type     list
 		:initform nil
 		:documentation
-		"This hook is run when a Spread client joins one of the
-groups this connection is a member of.")
+		"This hook is run when a Spread client joins one of
+the groups this connection is a member of.
+
+Handlers should accept two arguments: 1. a string designating the
+group for whose members changed 2. a list of members after the
+change.")
    (leave-hook  :initarg  :leave-hook
 		:type     list
 		:initform nil
 		:documentation
 		"This hook is run when a Spread client leaves one of
-the groups this connection is a member of."))
+the groups this connection is a member of.
+
+Handlers should accept two arguments: 1. a string designating the
+group for whose members changed 2. a list of members after the
+change."))
   (:documentation
    "Instances of this class represent connections to Spread
 segments. Each connection can participate in zero or more Spread
