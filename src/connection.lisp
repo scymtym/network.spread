@@ -79,24 +79,52 @@ at groups, but not for sending messages to groups."))
 (defmethod leave ((connection connection) (group (eql t)))
   (leave connection (slot-value connection 'groups)))
 
+(defmethod receive-into ((connection connection)
+			 (buffer     simple-array)
+			 &key
+			 (start          0)
+			 (end            (length buffer))
+			 (block?         t)
+			 (return-sender? t)
+			 (return-groups? t))
+  (check-type buffer simple-octet-vector)
+
+  (let ((handle (slot-value connection 'handle)))
+    ;; Do not enter/break out of loop when non-blocking and no
+    ;; messages queued.
+    (iter (while (or block? (%poll handle)))
+	  ;; Receive next message, blocking if necessary. Handle
+	  ;; membership messages via hooks (callbacks). Keep receiving
+	  ;; until the message is a regular message.
+	  (let+ (((&values type received sender groups)
+		  (%receive-into
+		   handle buffer start end return-sender? return-groups?)))
+	    (case type
+	      (:regular ; Return regular messages.
+	       (return (values received sender groups)))
+	      (:join    ; Run hooks for membership messages.
+	       (run-hook
+		(object-hook connection 'join-hook) sender groups))
+	      (:leave   ; Same for leave; ignore other messages.
+	       (run-hook
+		(object-hook connection 'leave-hook) sender groups)))))))
+
 (defmethod receive ((connection connection)
+		    &rest args
 		    &key
-		    (block? t))
-  ;; Do not enter/break out of loop when non-blocking and no messages
-  ;; queued.
-  (iter (while (or block? (%poll (slot-value connection 'handle))))
-	;; Receive next message, blocking if necessary.
-	(for message next (%receive (slot-value connection 'handle)))
-	;; Return regular messages, run hooks for membership messages.
-	(if (eq (first message) :regular)
-	    (return (values-list (rest message)))
-	    (let+ (((type group members) message)
-		   (hook (case type
-			   (:join  'join-hook)
-			   (:leave 'leave-hook))))
-	      (when hook
-		(run-hook (object-hook connection hook)
-			  group members))))))
+		    (block?         t)
+		    (return-sender? t)
+		    (return-groups? t))
+  (declare (ignore block? return-sender? return-groups?))
+
+  ;; SBCL won't do stack allocation otherwise
+  (locally (declare (optimize (speed 3) (debug 0) (safety 0)))
+    (let ((buffer (make-octet-vector +max-message+)))
+      (declare (type simple-octet-vector buffer)
+	       (dynamic-extent buffer))
+      (let+ (((&values received sender groups)
+	      (apply #'receive-into connection buffer args)))
+	(values (subseq buffer 0 received) sender groups)))))
 
 (defmethod send-bytes :before ((connection  connection)
 			       (destination t)

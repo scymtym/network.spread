@@ -35,7 +35,7 @@
   (:accept-session         1)
 
   (:illegal-spread        -1)
-  (:could-not-connect	  -2)
+  (:could-not-connect     -2)
   (:reject-quota          -3)
   (:reject-no-name        -4)
   (:reject-illegal-name   -5)
@@ -48,7 +48,7 @@
   (:illegal-service      -12)
   (:illegal-message      -13)
   (:illegal-group        -14)
-  (:buffer-too-short	 -15)
+  (:buffer-too-short     -15)
   (:groups-too-short     -16)
   (:message-too-long     -17)
   (:net-error-on-session -18))
@@ -114,10 +114,12 @@
 (cffi:defcfun (spread-poll "SP_poll") :int
   (handle :int))
 
+(declaim (inline spread-receive))
+
 (cffi:defcfun (spread-receive "SP_receive") :int
   (handle             :int)
   (service-type       (:pointer :int))
-  (sender             :string)
+  (sender             (:pointer :uchar)) ; actually :string
   (max-groups         :int)
   (num-groups         (:pointer :int))
   (groups             (:pointer :string))
@@ -146,6 +148,13 @@
 
 ;;; Convenience wrappers
 ;;
+
+(defmacro with-pointers-to-vector-data (bindings &body body)
+  `(cffi:with-pointer-to-vector-data ,(first bindings)
+     ,@(if (rest bindings)
+	   `((with-pointers-to-vector-data ,(rest bindings)
+	       ,@body))
+	   body)))
 
 (defun %connect (daemon
 		 &key
@@ -199,71 +208,116 @@
       ((zerop result) nil)
       (t              (%signal-error "Error polling" result)))))
 
-(defun %receive (handle)
+(declaim (ftype (function (t) (values membership-event &rest nil)) %extract-type)
+	 (inline %extract-type))
+
+(defun %extract-type (service-type)
+  (declare (optimize (speed 3) (debug 0) (safety 0)))
+  (let ((type (cffi:mem-ref service-type 'message-type)))
+    (cond
+      ((member :caused-by-join type)            :join)
+      ((or (member :caused-by-leave type)
+	   (member :caused-by-disconnect type)) :leave)
+      (t                                        :other))))
+
+(declaim (ftype (function (simple-octet-vector) (values string &rest nil)) %extract-sender)
+	 (inline %extract-sender))
+
+(defun %extract-sender (sender)
+  (declare (optimize (speed 3) (debug 0) (safety 0)))
+  #+sbcl
+  (sb-ext:octets-to-string
+   sender :external-format :ascii
+	  :end (or (position 0 sender) (length sender)))
+  #-sbcl
+  (cffi:foreign-string-to-lisp
+   sender
+   :encoding  :ascii
+   :max-chars (or (position 0 sender) (length sender))))
+
+(declaim (ftype (function (t octet-vector)
+			  (values (or list (eql :group-buffer-too-small))))
+		%extract-groups)
+	 (inline %extract-groups))
+
+(defun %extract-groups (num-groups groups)
+  (declare (optimize (speed 3) (debug 0) (safety 0)))
+  (let ((num-groups (cffi:mem-ref num-groups :int)))
+
+    (when (minusp num-groups)
+      (return-from %extract-groups :group-buffer-too-small))
+
+    (iter (repeat num-groups)
+	  (for (the fixnum offset) :from 0 :by +max-group-name+)
+	  (collect
+	    #+sbcl
+	    (sb-ext:octets-to-string
+	     groups :external-format :ascii
+		    :start offset
+		    :end   (or (position 0 groups
+					 :start offset
+					 :end   (+ offset +max-group-name+))
+			       (+ offset +max-group-name+)))
+	    #-sbcl
+	    (cffi:foreign-string-to-lisp groups
+					 :encoding  :ascii
+					 :offset    offset
+					 :max-chars +max-group-name+)))))
+
+(declaim (ftype (function (integer octet-vector non-negative-fixnum non-negative-fixnum boolean boolean)
+			  (values &rest t))
+		%receive-into))
+
+(defun %receive-into (handle buffer start end return-sender? return-groups?)
   ;; SBCL won't do stack allocation otherwise
   (declare (optimize (speed 3) (safety 0) (debug 0)))
-  (let ((buffer  (make-array +max-message+
-			    :element-type '(unsigned-byte 8))))
-    (declare (dynamic-extent buffer))
-    (cffi:with-pointer-to-vector-data (buffer1 buffer)
+  (let ((groups (cffi:make-shareable-byte-vector
+		 (* +max-groups+ +max-group-name+)))
+	(sender (cffi:make-shareable-byte-vector +max-group-name+)))
+    (declare (dynamic-extent groups sender))
+    (with-pointers-to-vector-data ((buffer-ptr buffer)
+				   (groups-ptr groups)
+				   (sender-ptr sender))
       (cffi:with-foreign-objects ((service-type    '(:pointer message-type))
 				  (num-groups      '(:pointer :int))
 				  (message-type1   '(:pointer :int16))
 				  (endian-mismatch '(:pointer :int)))
-	(cffi:with-foreign-strings ((groups (make-string (* +max-groups+ +max-group-name+)))
-				    (sender (make-string +max-group-name+)))
-	  (setf (cffi:mem-ref service-type :int) 0)
-	  (let ((result (spread-receive handle
-					service-type ; for input: 0 or DROP-RECV
-					sender
-					+max-groups+ num-groups groups
-					message-type1
-					endian-mismatch
-					+max-message+ buffer1)))
-	    (cond
-	      ;; Positive result -> process message
-	      ((not (minusp result))
-	       (funcall (cond
-			  ((plusp (logand (cffi:mem-ref service-type :int16) #x3f)) ;; TODO ugly
-			   #'%process-regular-message)
-			  (t
-			   #'%process-membership-message))
-			service-type sender num-groups groups result buffer))
+	(setf (cffi:mem-ref service-type :int) 0)
+	(let ((result (spread-receive handle
+				      service-type ; for input: 0 or DROP-RECV
+				      sender-ptr
+				      +max-groups+ num-groups groups-ptr
+				      message-type1
+				      endian-mismatch
+				      end
+				      (cffi:inc-pointer buffer-ptr start))))
+	  (declare (type fixnum result))
+	  (cond
+	    ;; Negative result => error.
+	    ((minusp result)
+	     (%signal-error "Error receiving" result))
 
-	      ;; Negative result -> error
-	      (t
-	       (%signal-error "Error receiving" result)))))))))
+	    ;; Positive result and service type indicates regular
+	    ;; message => return regular message.
+	    ((plusp (logand (cffi:mem-ref service-type :int16) #x3f)) ;; TODO ugly
+	     (values
+	      :regular
+	      result
+	      (when return-sender?
+		(%extract-sender sender))
+	      (when return-groups?
+		(%extract-groups num-groups groups))))
 
-(declaim (ftype (function (t t t t fixnum simple-octet-vector) list)
-		%process-regular-message
-		%process-membership-message)
-	 (inline %process-regular-message
-		 %process-membership-message))
-
-(defun %process-regular-message (service-type sender num-groups groups result buffer) ;; TODO message-type
-  (declare (ignore service-type))
-
-  (let ((num-groups (cffi:mem-ref num-groups :int)))
-    (list
-     :regular
-     (subseq buffer 0 result)
-     ;; TODO do not convert these if they are not required
-     (cffi:convert-from-foreign sender :string)
-     (if (not (minusp num-groups))
-	 (%extract-groups num-groups groups)
-	 :group-buffer-too-small))))
-
-(defun %process-membership-message (service-type sender num-groups groups result buffer)
-  (declare (ignore result buffer))
-
-  (let ((type       (cffi:mem-ref service-type 'message-type))
-	(num-groups (cffi:mem-ref num-groups :int)))
-    (list
-     (%type->tag type)
-     (cffi:convert-from-foreign sender :string) ; means group
-     (if (not (minusp num-groups))              ; group members
-	 (%extract-groups num-groups groups)
-	 :group-buffer-too-small))))
+	    ;; Positive result and service type does not indicate
+	    ;; regular message => return membership message.
+	    (t
+	     (values
+	      (%extract-type service-type)
+	      nil
+	      (when return-sender?
+		(%extract-sender sender))
+	      (when return-groups?
+		(%extract-groups num-groups groups))))))))))
 
 (declaim (ftype (function (fixnum string simple-octet-vector)
 			  (values)) %send-one))
@@ -309,30 +363,6 @@
 
 ;;; Utility functions
 ;;
-
-(declaim (ftype (function (list) membership-event) %type->tag)
-	 (inline %type->tag))
-
-(defun %type->tag (type)
-  (cond
-    ((member :caused-by-join type)
-     :join)
-    ((or (member :caused-by-leave type)
-	 (member :caused-by-disconnect type))
-     :leave)
-    (t
-     :other)))
-
-(declaim (ftype (function (non-negative-fixnum t) list) %extract-groups)
-	 (inline %extract-groups))
-
-(defun %extract-groups (num-groups groups)
-  (iter (repeat num-groups)
-	(for offset :from 0 :by +max-group-name+)
-	(collect (cffi:foreign-string-to-lisp groups
-					      :encoding  :ascii
-					      :offset    offset
-					      :max-chars +max-group-name+))))
 
 (declaim (ftype (function (string (or fixnum keyword) &rest t) *) %signal-error)
 	 (inline %signal-error))

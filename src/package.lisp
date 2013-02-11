@@ -54,7 +54,7 @@
 
    #:join    #:leave
 
-   #:send    #:receive)
+   #:send    #:receive #:receive-into)
 
   ;; Protocol for sending raw bytes
   (:export

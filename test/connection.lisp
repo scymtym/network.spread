@@ -243,30 +243,85 @@ be send but larger messages signal an error.")
   (let ((connection (connect daemon)))
     (disconnect connection)
 
-    (ensure-condition 'spread-error
-      (receive connection))))
+    (ensure-condition 'spread-error (receive connection))))
 
-(addtest (connection-root
-          :documentation
-	  "Test sending and receiving data.")
-  send-receive
+(macrolet
+    ((with-receive-test-case-context ((&key (group "group")) &body body)
+       (once-only (group)
+	 `(ensure-cases ((expected-message sender? expected-group))
+	      `((,(octet-vector 98 97 114) t   ,,group)
+		(,(octet-vector 98 97 114) nil ,,group)
+		(,(octet-vector 98 97 114) t   nil))
 
-  (with-connection (sender daemon)
-    (let ((sender-name (connection-name sender))
-	  (expected    (map 'octet-vector #'char-code "bar")))
-      (with-connection (receiver daemon)
-	(with-group (receiver "group")
-	  ;; The receiver should not get this message.
-	  (send sender "some-group" "foo")
+	    (with-connection (sender daemon)
+	      (let ((sender-name (connection-name sender)))
+		(with-connection (receiver daemon)
+		  (with-group (receiver ,group)
+		    ,@body))))))))
 
-	  ;; But this one
-	  (send sender "group" "bar")
-	  (ensure-same (receive receiver :block? t)
-		       (values expected sender-name '("group"))
-		       :test #'equalp)
 
-	  ;; Non-blocking receive should just return.
-	  (receive receiver :block? nil))))))
+  (addtest (connection-root
+	    :documentation
+	    "Smoke test for sending and receiving data.")
+    send-receive/smoke
+
+    (with-receive-test-case-context (:group "group")
+      ;; The receiver should not get this message.
+      (send sender "some-other-group" "foo")
+
+      ;; But this one
+      (send sender "group" "bar")
+      (ensure-same (receive receiver :block?         t
+				     :return-groups? expected-group
+				     :return-sender? sender?)
+		   (values expected-message
+			   (when sender?
+			     sender-name)
+			   (when expected-group
+			     (list expected-group)))
+		   :test #'equalp)
+
+      ;; Non-blocking receive should just return.
+      (receive receiver :block?         nil
+			:return-groups? expected-group
+			:return-sender? sender?)))
+
+  (addtest (connection-root
+	    :documentation
+	    "Smoke test for sending and receiving data into a buffer.")
+    send-receive-into/smoke
+
+    (with-receive-test-case-context (:group "group")
+      ;; The receiver should not get this message.
+      (send sender "some-other-group" "foo")
+
+      (let ((buffer (make-octet-vector 100)))
+	;; But this one.
+	(send sender "group" "bar")
+	(ensure-same (receive-into receiver buffer
+				   :block?         t
+				   :return-groups? expected-group
+				   :return-sender? sender?)
+		     (values (length expected-message)
+			     (when sender?
+			       sender-name)
+			     (when expected-group
+			       (list expected-group)))
+		     :test #'equalp)
+
+	;; Buffer too small => simple-spread-error: buffer-too-short
+	(send sender "group" "bar")
+	(ensure-condition 'simple-spread-error
+	  (receive-into receiver (make-octet-vector 2)
+			:block?         t
+			:return-groups? expected-group
+			:return-sender? sender?))
+
+	;; Non-blocking receive should just return.
+	(receive-into receiver buffer
+		      :block?         nil
+		      :return-groups? expected-group
+		      :return-sender? sender?)))))
 
 (addtest (connection-root
           :documentation
