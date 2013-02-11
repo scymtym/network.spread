@@ -22,13 +22,22 @@
    received. However, in order to receive data, it is necessary to
    join the Spread group to which messages are sent. In the following
    code, the previously created connection joins a Spread group called
-   ="mygroup"= and tries to receive a message. The number of groups a
-   given connection is a member of is evident from the printed
-   representation of the connection instance.
+   ="mygroup"=. The number of groups a given connection is a member of
+   is evident from the printed representation of the connection
+   instance.
 #+BEGIN_SRC lisp
 (network.spread:join *connection* "mygroup")
-
+#+END_SRC
+   After joining one ore more groups,  messages can be received:
+#+BEGIN_SRC lisp
 (network.spread:receive *connection* :block? nil)
+#+END_SRC
+   Consing can be avoided by receiving into a previously allocated
+   buffer:
+#+BEGIN_SRC lisp
+(defvar *buffer* (nibbles:make-octet-vector 10000))
+
+(network.spread:receive-into *connection* *buffer*)
 #+END_SRC
 ** Sending Messages
    To send data to receivers in a Spread group, the generic functions
@@ -44,7 +53,7 @@
 #+BEGIN_SRC lisp
 (network.spread:send *connection* '("mygroup" "othergroup") "mymessage")
 #+END_SRC
-* Settings :noexport:
+* Settings                                                         :noexport:
 
-#+OPTIONS: H:2 num:t toc:t \n:nil @:t ::t |:t ^:t -:t f:t *:t <:t
+#+OPTIONS: H:2 num:nil toc:t \n:nil @:t ::t |:t ^:t -:t f:t *:t <:t
 #+OPTIONS: TeX:t LaTeX:t skip:nil d:nil todo:t pri:nil tags:not-in-toc
