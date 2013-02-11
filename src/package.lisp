@@ -10,14 +10,12 @@
    #:alexandria
    #:iterate
    #:let-plus
+
+   #:nibbles
    #:hooks)
 
   (:shadow
    #:leave)
-
-  ;; Types
-  (:export
-   #:octet-vector)
 
   ;; Conditions
   (:export

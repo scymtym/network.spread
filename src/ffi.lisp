@@ -234,7 +234,7 @@
 	      (t
 	       (%signal-error "Error receiving" result)))))))))
 
-(declaim (ftype (function (t t t t fixnum octet-vector) list)
+(declaim (ftype (function (t t t t fixnum simple-octet-vector) list)
 		%process-regular-message
 		%process-membership-message)
 	 (inline %process-regular-message
@@ -265,7 +265,7 @@
 	 (%extract-groups num-groups groups)
 	 :group-buffer-too-small))))
 
-(declaim (ftype (function (fixnum string octet-vector)
+(declaim (ftype (function (fixnum string simple-octet-vector)
 			  (values)) %send-one))
 
 (defun %send-one (handle destination data)
@@ -282,7 +282,7 @@
 	(t
 	 (%signal-error "Sending failed" result))))))
 
-(declaim (ftype (function (fixnum sequence octet-vector)
+(declaim (ftype (function (fixnum sequence simple-octet-vector)
 			  (values)) %send-multiple))
 
 (defun %send-multiple (handle destinations data)
@@ -323,7 +323,7 @@
     (t
      :other)))
 
-(declaim (ftype (function (non-negative-fixnum octet-vector) list) %extract-groups)
+(declaim (ftype (function (non-negative-fixnum t) list) %extract-groups)
 	 (inline %extract-groups))
 
 (defun %extract-groups (num-groups groups)

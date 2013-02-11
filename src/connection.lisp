@@ -119,7 +119,7 @@ at groups, but not for sending messages to groups."))
 (defmethod send ((connection  connection)
 		 (destination string)
 		 (data        simple-array))
-  (check-type data octet-vector)
+  (check-type data simple-octet-vector)
 
   (send-bytes connection destination data))
 
@@ -127,7 +127,7 @@ at groups, but not for sending messages to groups."))
 (defmethod send ((connection  connection)
 		 (destination sequence)
 		 (data        simple-array))
-  (check-type data octet-vector)
+  (check-type data simple-octet-vector)
 
   (if (length= 1 destination)
       (send-bytes connection (elt destination 0) data)

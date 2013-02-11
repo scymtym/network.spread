@@ -24,6 +24,7 @@ spread group communication system."
 		:iterate
 		:let-plus
 
+		:nibbles
 		:cffi
 		:trivial-garbage
 

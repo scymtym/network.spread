@@ -11,6 +11,8 @@
    #:let-plus
    #:lift
 
+   #:nibbles
+
    #:network.spread)
 
   (:import-from #:network.spread
