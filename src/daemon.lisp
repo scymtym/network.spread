@@ -1,21 +1,21 @@
 ;;;; daemon.lisp --- Function for running the spread daemon.
 ;;;;
-;;;; Copyright (C) 2011, 2012 Jan Moringen
+;;;; Copyright (C) 2011, 2012, 2013 Jan Moringen
 ;;;;
 ;;;; Author: Jan Moringen <jmoringe@techfak.uni-bielefeld.de>
 
 (cl:in-package #:network.spread)
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
- (defvar *daemon-parameters*
-   '((port              *default-port*)
-     (program           *default-daemon-program*)
-     (host              "localhost")
-     (host-address      "127.0.0.1")
-     (broadcast-address "127.0.0.255")
-     (reuse-socket?     t)
-     (wait              2))
-   "List of keyword parameter names and default values for
+  (defvar *daemon-parameters*
+    '((port              *default-port*)
+      (program           *default-daemon-program*)
+      (host              "localhost")
+      (host-address      "127.0.0.1")
+      (broadcast-address "127.0.0.255")
+      (reuse-socket?     t)
+      (wait              2))
+    "List of keyword parameter names and default values for
 start-daemon* functions."))
 
 (defmacro define-start-daemon-function (name (&rest extra-args)
@@ -190,9 +190,7 @@ specified and the port component as string."
         (values (subseq name (1+ @-index)) (subseq name 0 @-index))
 	(values nil name))))
 
-
 ;;; Utility functions
-;;
 
 (defun %cleanup-after-spread-daemon (port config-filename)
   "Clean up the socket corresponding to PORT and the configuration

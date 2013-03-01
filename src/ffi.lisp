@@ -6,9 +6,7 @@
 
 (cl:in-package #:network.spread)
 
-
-;;;
-;;
+;;; Foreign library
 
 (cffi:define-foreign-library libspread
   (:darwin (:or "libspread-without-signal-blocking.dylib"
@@ -25,9 +23,7 @@
 
 (cffi:use-foreign-library libspread)
 
-
 ;;; Spread constants
-;;
 
 (cffi:defcenum return-value
   (:ok                     0)
@@ -88,9 +84,7 @@
 (defconstant +max-groups+     32
   "The maximum number of groups in a single API call.")
 
-
 ;;; Spread functions
-;;
 
 (cffi:defcfun (spread-connect "SP_connect") return-value
   (daemon        :string)
@@ -145,9 +139,7 @@
   (message-length :int)
   (message        (:pointer :uchar)))
 
-
 ;;; Convenience wrappers
-;;
 
 (defmacro with-pointers-to-vector-data (bindings &body body)
   `(cffi:with-pointer-to-vector-data ,(first bindings)
@@ -360,9 +352,7 @@
 	  (t
 	   (%signal-error "Multigroup send failed" result)))))))
 
-
 ;;; Utility functions
-;;
 
 (declaim (ftype (function (string (or fixnum keyword) &rest t) *) %signal-error)
 	 (inline %signal-error))

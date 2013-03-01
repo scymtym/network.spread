@@ -189,9 +189,7 @@ at groups, but not for sending messages to groups."))
       (format stream "~A (~D) #~D"
 	      name (length groups) handle))))
 
-
-;;;
-;;
+;;; Constructing a connection
 
 (defmethod connect ((daemon string))
   "Connect to the spread segment designated by DAEMON. If the

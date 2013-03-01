@@ -68,9 +68,7 @@ maximum message length ~D.~@:>"
 octet-vector which has more than `+maximum-message-data-length+'
 octets."))
 
-
 ;;; Daemon-related conditions
-;;
 
 (define-condition failed-to-start-daemon (error)
   ((program   :initarg  :program
