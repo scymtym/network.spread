@@ -7,16 +7,53 @@
 (cl:defpackage #:network.spread-system
   (:use
    #:cl
-   #:asdf))
+   #:asdf)
+
+  (:export
+   #:version/list
+   #:version/string))
 
 (cl:in-package #:network.spread-system)
+
+;;; Version stuff
+
+(defparameter +version-major+ 0
+  "Major component of version number.")
+
+(defparameter +version-minor+ 2
+  "Minor component of version number.")
+
+(defparameter +version-revision+ 0
+  "Revision component of version number.")
+
+(defun version/list (&key
+		     (revision? t))
+  "Return a version of the form (MAJOR MINOR [REVISION]) where
+REVISION is optional.
+
+REVISION? controls whether REVISION should be included. Default
+behavior is to include REVISION."
+  (append (list +version-major+ +version-minor+)
+	  (when revision? (list +version-revision+))))
+
+(defun version/string (&rest args
+		       &key
+		       revision?)
+  "Return a version string of the form
+\"MAJOR.MINOR[.REVISION]\" where REVISION is optional.
+
+See `version/list' for details on keyword parameters."
+  (declare (ignore revision?))
+  (format nil "~{~A.~A~^.~A~}" (apply #'version/list args)))
+
+;;; System definition
 
 #+sbcl (asdf:load-system :sb-posix)
 
 (defsystem :network.spread
   :author      "Jan Moringen <jmoringe@techfak.uni-bielefeld.de>"
   :maintainer  "Jan Moringen <jmoringe@techfak.uni-bielefeld.de>"
-  :version     "0.2.0"
+  :version     #.(version/string)
   :license     "LLGPLv3; see COPYING file for details."
   :description "This system provides a Common Lisp interface to the
 spread group communication system."
@@ -73,10 +110,10 @@ spread group communication system."
 (defsystem :network.spread-test
   :author      "Jan Moringen <jmoringe@techfak.uni-bielefeld.de>"
   :maintainer  "Jan Moringen <jmoringe@techfak.uni-bielefeld.de>"
-  :version     "0.2.0"
+  :version     #.(version/string)
   :license     "LLGPLv3; see COPYING file for details."
   :description "This system provides unit tests for the network.spread system."
-  :depends-on  ((:version :network.spread "0.2.0")
+  :depends-on  ((:version :network.spread #.(version/string))
 
 		(:version :lift           "1.7.1"))
   :properties  ((:port . 6789))
