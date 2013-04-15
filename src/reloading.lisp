@@ -31,7 +31,7 @@ Can be used in conjunction with `unload-spread-library'."
     (cffi:load-foreign-library-error (condition)
       (cond
 	((member if-fails `(,#'warn warn) :test #'eq)
-	 (warn "~@<Failed to load Spread library: ~A. Spread functionality~
+	 (warn "~@<Failed to load Spread library: ~A. Spread functionality ~
 will not be available.~@:>"
 	       condition))
 	(t
