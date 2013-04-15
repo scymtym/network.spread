@@ -14,15 +14,15 @@
 ;;; Daemon-related parameters
 
 (defparameter *default-port* (or (asdf:component-property
-				  (asdf:find-system :network.spread)
-				  :default-port)
-				 4803)
+                                  (asdf:find-system :network.spread)
+                                  :default-port)
+                                 4803)
   "The default port on which the Spread should listen when it is
 started via `start-daemon' or `with-daemon'.")
 
 (defparameter *default-daemon-program* (or (asdf:component-property
-					    (asdf:find-system :network.spread)
-					    :default-daemon-program)
-					   "spread")
+                                            (asdf:find-system :network.spread)
+                                            :default-daemon-program)
+                                           "spread")
   "The default name of the program that should be executed when
 starting the Spread daemon.")

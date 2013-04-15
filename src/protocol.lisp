@@ -35,10 +35,10 @@ spread session in which CONNECTION participates."))
 checks are also omitted."))
 
 (defgeneric receive-into (connection buffer
-			  &key
-			  start end
-			  block?
-			  return-sender? return-groups?)
+                          &key
+                          start end
+                          block?
+                          return-sender? return-groups?)
   (:documentation
    "Receive data that is send to any spread group in which CONNECTION
 is a member into BUFFER. Return three values: 1. the number of
@@ -57,9 +57,9 @@ RETURN-SENDER? and RETURN-GROUPS? control whether the sender and/or
 group names should be extracted from the received message."))
 
 (defgeneric receive (connection
-		     &key
-		     block?
-		     return-sender? return-groups?)
+                     &key
+                     block?
+                     return-sender? return-groups?)
   (:documentation
    "Receive and return data that is send to any spread group in which
 CONNECTION is a member. Return three values: 1. an

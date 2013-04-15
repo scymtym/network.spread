@@ -1,6 +1,6 @@
 ;;;; macros.lisp --- Unit tests for macros provided by the network.spread system.
 ;;;;
-;;;; Copyright (C) 2011, 2012 Jan Moringen
+;;;; Copyright (C) 2011, 2012, 2013 Jan Moringen
 ;;;;
 ;;;; Author: Jan Moringen <jmoringe@techfak.uni-bielefeld.de>
 
@@ -19,7 +19,7 @@ network.spread system."))
 
 (addtest (with-connection-root
           :documentation
-	  "Smoke test for the `with-connection' macro.")
+          "Smoke test for the `with-connection' macro.")
   smoke
 
   (with-connection (connection daemon)
@@ -32,7 +32,7 @@ network.spread system."))
 
 (addtest (with-group-root
           :documentation
-	  "Smoke test for the `with-group' macro.")
+          "Smoke test for the `with-group' macro.")
   smoke
 
   (with-connection (connection daemon)

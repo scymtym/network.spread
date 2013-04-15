@@ -1,6 +1,6 @@
 ;;;; macros.lisp ---
 ;;;;
-;;;; Copyright (C) 2011, 2012 Jan Moringen
+;;;; Copyright (C) 2011, 2012, 2013 Jan Moringen
 ;;;;
 ;;;; Author: Jan Moringen <jmoringe@techfak.uni-bielefeld.de>
 
@@ -12,7 +12,7 @@
 
   `(let ((,connection-var (connect ,daemon)))
      (unwind-protect
-	  (progn ,@body)
+          (progn ,@body)
        (disconnect ,connection-var))))
 
 (defmacro with-group ((connection group) &body body)
@@ -20,7 +20,7 @@
 GROUP."
   (once-only (connection group)
     `(unwind-protect
-	  (progn
-	    (join ,connection ,group)
-	    ,@body)
+          (progn
+            (join ,connection ,group)
+            ,@body)
        (leave ,connection ,group))))

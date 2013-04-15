@@ -30,12 +30,12 @@ Can be used in conjunction with `unload-spread-library'."
       (cffi:use-foreign-library libspread)
     (cffi:load-foreign-library-error (condition)
       (cond
-	((member if-fails `(,#'warn warn) :test #'eq)
-	 (warn "~@<Failed to load Spread library: ~A. Spread functionality ~
-will not be available.~@:>"
-	       condition))
-	(t
-	 (funcall if-fails condition))))))
+        ((member if-fails `(,#'warn warn) :test #'eq)
+         (warn "~@<Failed to load Spread library: ~A. Spread functionality ~
+                will not be available.~@:>"
+               condition))
+        (t
+         (funcall if-fails condition))))))
 
 (defun enable-reload-spread-library (&key (if-fails #'error))
   "Maybe arrange for the Spread library to be reloaded after
@@ -46,7 +46,7 @@ nothing in these cases.
 
 Currently, this action is irreversible."
   #+sbcl (progn
-	   (push 'unload-spread-library sb-ext:*save-hooks*)
-	   (push (lambda () (reload-spread-library :if-fails if-fails))
-		 sb-ext:*init-hooks*))
+           (push 'unload-spread-library sb-ext:*save-hooks*)
+           (push (lambda () (reload-spread-library :if-fails if-fails))
+                 sb-ext:*init-hooks*))
   #-sbcl (error "Reloading libraries is not implemented for this Lisp."))
