@@ -7,7 +7,7 @@
 
 * Introduction
   The =network.spread= system provides Common Lisp bindings for the
-  client library of the [[www.spread.org][Spread group communication system]].
+  client library of the [[http://www.spread.org/][Spread group communication system]].
 * Tutorial
 ** Connecting
    When using Spread, the first step usually consists in establishing
