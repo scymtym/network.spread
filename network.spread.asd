@@ -27,18 +27,18 @@
   "Revision component of version number.")
 
 (defun version/list (&key
-		     (revision? t))
+                     (revision? t))
   "Return a version of the form (MAJOR MINOR [REVISION]) where
 REVISION is optional.
 
 REVISION? controls whether REVISION should be included. Default
 behavior is to include REVISION."
   (append (list +version-major+ +version-minor+)
-	  (when revision? (list +version-revision+))))
+          (when revision? (list +version-revision+))))
 
 (defun version/string (&rest args
-		       &key
-		       revision?)
+                       &key
+                       revision?)
   "Return a version string of the form
 \"MAJOR.MINOR[.REVISION]\" where REVISION is optional.
 
@@ -58,52 +58,52 @@ See `version/list' for details on keyword parameters."
   :description "This system provides a Common Lisp interface to the
 spread group communication system."
   :depends-on  (:alexandria
-		:iterate
-		:let-plus
+                :iterate
+                :let-plus
 
-		:nibbles
-		:cffi
-		:trivial-garbage
+                :nibbles
+                :cffi
+                :trivial-garbage
 
-		:cl-hooks)
+                :cl-hooks)
   :properties  ((:default-port           . #.(or #+sbcl (let ((value (sb-posix:getenv "SPREAD_PORT")))
-							  (when value (read-from-string value)))
-						 4803))
-		(:default-daemon-program . #.(or #+sbcl (sb-posix:getenv "SPREAD_DAEMON_PROGRAM")
-						 #+sbcl (let ((root (sb-posix:getenv "SPREAD_ROOT")))
-							  (when root
-							    (format nil "~A/sbin/spread" root)))
-						 "spread")))
+                                                          (when value (read-from-string value)))
+                                                 4803))
+                (:default-daemon-program . #.(or #+sbcl (sb-posix:getenv "SPREAD_DAEMON_PROGRAM")
+                                                 #+sbcl (let ((root (sb-posix:getenv "SPREAD_ROOT")))
+                                                          (when root
+                                                            (format nil "~A/sbin/spread" root)))
+                                                 "spread")))
   :components  ((:module     "src"
-		 :components ((:file       "package")
-			      (:file       "types"
-			       :depends-on ("package"))
-			      (:file       "conditions"
-			       :depends-on ("package" "variables"))
-			      (:file       "protocol"
-			       :depends-on ("package"))
-			      (:file       "ffi"
-			       :depends-on ("package" "types"))
-			      (:file       "variables"
-			       :depends-on ("package" "ffi"))
-			      (:file       "connection"
-			       :depends-on ("package" "types"
-					    "conditions" "ffi"
-					    "protocol" "variables"))
-			      (:file       "macros"
-			       :depends-on ("package" "connection"))
+                 :components ((:file       "package")
+                              (:file       "types"
+                               :depends-on ("package"))
+                              (:file       "conditions"
+                               :depends-on ("package" "variables"))
+                              (:file       "protocol"
+                               :depends-on ("package"))
+                              (:file       "ffi"
+                               :depends-on ("package" "types"))
+                              (:file       "variables"
+                               :depends-on ("package" "ffi"))
+                              (:file       "connection"
+                               :depends-on ("package" "types"
+                                            "conditions" "ffi"
+                                            "protocol" "variables"))
+                              (:file       "macros"
+                               :depends-on ("package" "connection"))
 
-			      (:file       "reloading"
-			       :depends-on ("ffi"))
+                              (:file       "reloading"
+                               :depends-on ("ffi"))
 
-			      #+sbcl
-			      (:file       "daemon"
-			       :depends-on ("package" "conditions"
-					    "variables"))
+                              #+sbcl
+                              (:file       "daemon"
+                               :depends-on ("package" "conditions"
+                                            "variables"))
 
-			      #+(and sbcl (not win32))
-			      (:file       "fix-signal-handlers"
-			       :depends-on ("protocol")))))
+                              #+(and sbcl (not win32))
+                              (:file       "fix-signal-handlers"
+                               :depends-on ("protocol")))))
 
   :in-order-to ((test-op (test-op :network.spread-test))))
 
@@ -115,18 +115,18 @@ spread group communication system."
   :description "This system provides unit tests for the network.spread system."
   :depends-on  ((:version :network.spread #.(version/string))
 
-		(:version :lift           "1.7.1"))
+                (:version :lift           "1.7.1"))
   :properties  ((:port . 6789))
   :components  ((:module     "test"
-		 :serial     t
-		 :components ((:file       "package")
-			      (:file       "connection")
-			      (:file       "macros")
-			      (:file       "daemon")))))
+                 :serial     t
+                 :components ((:file       "package")
+                              (:file       "connection")
+                              (:file       "macros")
+                              (:file       "daemon")))))
 
 (defmethod perform ((op test-op) (system (eql (find-system :network.spread-test))))
   (eval (read-from-string
-	 "(NETWORK.SPREAD:WITH-DAEMON
+         "(NETWORK.SPREAD:WITH-DAEMON
               (:PORT (ASDF:COMPONENT-PROPERTY
                        (ASDF:FIND-SYSTEM :NETWORK.SPREAD-TEST) :PORT))
             (LIFT:RUN-TESTS :CONFIG :GENERIC))")))
