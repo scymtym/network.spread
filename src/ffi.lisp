@@ -8,20 +8,27 @@
 
 ;;; Foreign library
 
-(cffi:define-foreign-library libspread
-  (:darwin (:or "libspread-without-signal-blocking.dylib"
-                "libspread.dylib"
-                "libspread.2.dylib"
-                "libspread.2.0.dylib"
-                "libspread.1.dylib"))
-  (:unix   (:or "libspread-without-signal-blocking.so"
-                "libspread.so"
-                "libspread.so.2"
-                "libspread.so.2.0"
-                "libspread.so.1"))
-  (t       (:default "libspread")))
+(defun use-spread-library
+    (&key
+     (pathname network.spread-system:*spread-library-pathname*))
+ (cffi::register-foreign-library
+  'libspread
+  (if pathname
+      `((t (:default ,pathname)))
+      `((:darwin (:or "libspread-without-signal-blocking.dylib"
+                      "libspread.dylib"
+                      "libspread.2.dylib"
+                      "libspread.2.0.dylib"
+                      "libspread.1.dylib"))
+        (:unix   (:or "libspread-without-signal-blocking.so"
+                      "libspread.so"
+                      "libspread.so.2"
+                      "libspread.so.2.0"
+                      "libspread.so.1"))
+        (t       (:default "libspread")))))
+  (cffi:load-foreign-library 'libspread))
 
-(cffi:use-foreign-library libspread)
+(use-spread-library)
 
 ;;; Spread constants
 

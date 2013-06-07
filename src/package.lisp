@@ -86,6 +86,8 @@
 
   ;; Reloading of the Spread library
   (:export
+   #:use-spread-library
+
    #:unload-spread-library
    #:reload-spread-library
    #:enable-reload-spread-library)

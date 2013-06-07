@@ -16,6 +16,9 @@
 
   ;; Configuration stuff
   (:export
+   #:spread-library-pathname
+   #:*spread-library-pathname*
+
    #:*default-port*
    #:*default-daemon-program*)
 
@@ -131,6 +134,16 @@ spread group communication system."
             (LIFT:RUN-TESTS :CONFIG :GENERIC))")))
 
 ;;; Configuration stuff
+
+(defun spread-library-pathname ()
+  "Interpret hint as to where the Spread library can be found."
+  (or #+sbcl (sb-posix:getenv "SPREAD_LIBRARY")
+      nil))
+
+(defparameter *spread-library-pathname* (spread-library-pathname)
+  "The pathname of the Spread library. nil or relative pathnames
+indicate that the operating system's facilities should be used to
+locate the library.")
 
 (defparameter *default-port*
   (or #+sbcl (let ((value (sb-posix:getenv "SPREAD_PORT")))
