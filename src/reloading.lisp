@@ -37,6 +37,8 @@ Can be used in conjunction with `unload-spread-library'."
         (t
          (funcall if-fails condition))))))
 
+(defvar *init-hook* nil)
+
 (defun enable-reload-spread-library (&key (if-fails #'error))
   "Maybe arrange for the Spread library to be reloaded after
 saving/reloading the Lisp image.
@@ -44,9 +46,26 @@ saving/reloading the Lisp image.
 This may be unnecessary or not even make sense for some Lisps. Do
 nothing in these cases.
 
-Currently, this action is irreversible."
+See `disable-reload-spread-library'."
+  #+sbcl (let ((init-hook (lambda ()
+                            (reload-spread-library :if-fails if-fails))))
+           ;; Remove previously installed init hook, if any.
+           (when *init-hook*
+             (removef sb-ext:*init-hooks* *init-hook*))
+           (setf *init-hook* init-hook)
+
+           (pushnew 'unload-spread-library sb-ext:*save-hooks*)
+           (push    init-hook              sb-ext:*init-hooks*)))
+
+(defun disable-reload-spread-library ()
+  "Arrange for the currently used Spread library to persist across
+saving/reloading the Lisp image.
+
+This may be unnecessary or not even make sense for some Lisps. Do
+nothing in these cases.
+
+See `enable-reload-spread-library'."
   #+sbcl (progn
-           (push 'unload-spread-library sb-ext:*save-hooks*)
-           (push (lambda () (reload-spread-library :if-fails if-fails))
-                 sb-ext:*init-hooks*))
-  #-sbcl (error "Reloading libraries is not implemented for this Lisp."))
+           (removef sb-ext:*save-hooks* 'unload-spread-library)
+           (when *init-hook*
+             (removef sb-ext:*init-hooks* *init-hook*))))

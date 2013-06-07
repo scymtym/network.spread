@@ -90,7 +90,9 @@
 
    #:unload-spread-library
    #:reload-spread-library
-   #:enable-reload-spread-library)
+
+   #:enable-reload-spread-library
+   #:disable-reload-spread-library)
 
   (:documentation
    "This package contains a Common Lisp interface to the spread group
