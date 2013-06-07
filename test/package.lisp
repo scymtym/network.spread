@@ -30,8 +30,7 @@
   (port
    daemon)
   (:setup
-   (setf port   (asdf:component-property
-                 (asdf:find-system :network.spread-test) :port)
+   (setf port   network.spread-system:*test-port*
          daemon (format nil "~D" port)))
   (:timeout 20)
   (:documentation

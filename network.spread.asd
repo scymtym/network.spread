@@ -9,9 +9,19 @@
    #:cl
    #:asdf)
 
+  ;; Version stuff
   (:export
    #:version/list
-   #:version/string))
+   #:version/string)
+
+  ;; Configuration stuff
+  (:export
+   #:*default-port*
+   #:*default-daemon-program*)
+
+  ;; Test configuration stuff
+  (:export
+   #:*test-port*))
 
 (cl:in-package #:network.spread-system)
 
@@ -48,8 +58,6 @@ See `version/list' for details on keyword parameters."
 
 ;;; System definition
 
-#+sbcl (asdf:load-system :sb-posix)
-
 (defsystem :network.spread
   :author      "Jan Moringen <jmoringe@techfak.uni-bielefeld.de>"
   :maintainer  "Jan Moringen <jmoringe@techfak.uni-bielefeld.de>"
@@ -57,6 +65,7 @@ See `version/list' for details on keyword parameters."
   :license     "LLGPLv3; see COPYING file for details."
   :description "This system provides a Common Lisp interface to the
 spread group communication system."
+  #+sbcl :defsystem-depends-on #+sbcl (:sb-posix)
   :depends-on  (:alexandria
                 :iterate
                 :let-plus
@@ -66,14 +75,6 @@ spread group communication system."
                 :trivial-garbage
 
                 :cl-hooks)
-  :properties  ((:default-port           . #.(or #+sbcl (let ((value (sb-posix:getenv "SPREAD_PORT")))
-                                                          (when value (read-from-string value)))
-                                                 4803))
-                (:default-daemon-program . #.(or #+sbcl (sb-posix:getenv "SPREAD_DAEMON_PROGRAM")
-                                                 #+sbcl (let ((root (sb-posix:getenv "SPREAD_ROOT")))
-                                                          (when root
-                                                            (format nil "~A/sbin/spread" root)))
-                                                 "spread")))
   :components  ((:module     "src"
                  :components ((:file       "package")
                               (:file       "types"
@@ -116,7 +117,6 @@ spread group communication system."
   :depends-on  ((:version :network.spread #.(version/string))
 
                 (:version :lift           "1.7.1"))
-  :properties  ((:port . 6789))
   :components  ((:module     "test"
                  :serial     t
                  :components ((:file       "package")
@@ -127,6 +127,27 @@ spread group communication system."
 (defmethod perform ((op test-op) (system (eql (find-system :network.spread-test))))
   (eval (read-from-string
          "(NETWORK.SPREAD:WITH-DAEMON
-              (:PORT (ASDF:COMPONENT-PROPERTY
-                       (ASDF:FIND-SYSTEM :NETWORK.SPREAD-TEST) :PORT))
+              (:PORT NETWORK.SPREAD-SYSTEM:*TEST-PORT*)
             (LIFT:RUN-TESTS :CONFIG :GENERIC))")))
+
+;;; Configuration stuff
+
+(defparameter *default-port*
+  (or #+sbcl (let ((value (sb-posix:getenv "SPREAD_PORT")))
+               (when value (read-from-string value)))
+      4803)
+  "The default port on which the Spread daemon should listen when it
+is started via `network.spread:start-daemon' or
+`network.spread:with-daemon'.")
+
+(defparameter *default-daemon-program*
+  (or #+sbcl (sb-posix:getenv "SPREAD_DAEMON_PROGRAM")
+      #+sbcl (let ((root (sb-posix:getenv "SPREAD_ROOT")))
+               (when root
+                 (format nil "~A/sbin/spread" root)))
+      "spread")
+  "The default name of the program that should be executed when
+starting the Spread daemon.")
+
+(defparameter *test-port* 6789
+  "The port on which the Spread daemon should listen during tests.")
