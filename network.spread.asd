@@ -1,6 +1,6 @@
 ;;;; network.spread.asd --- System definition for the network.spread system.
 ;;;;
-;;;; Copyright (C) 2011, 2012, 2013 Jan Moringen
+;;;; Copyright (C) 2011, 2012, 2013, 2014 Jan Moringen
 ;;;;
 ;;;; Author: Jan Moringen <jmoringe@techfak.uni-bielefeld.de>
 
@@ -36,7 +36,7 @@
 (defparameter +version-minor+ 2
   "Minor component of version number.")
 
-(defparameter +version-revision+ 0
+(defparameter +version-revision+ 1
   "Revision component of version number.")
 
 (defun version/list (&key

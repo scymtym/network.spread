@@ -1,6 +1,6 @@
 ;;;; ffi.lisp --- Spread foreign library and functions.
 ;;;;
-;;;; Copyright (C) 2011, 2012, 2013 Jan Moringen
+;;;; Copyright (C) 2011, 2012, 2013, 2014 Jan Moringen
 ;;;;
 ;;;; Author: Jan Moringen <jmoringe@techfak.uni-bielefeld.de>
 
@@ -56,31 +56,32 @@
   (:message-too-long     -17)
   (:net-error-on-session -18))
 
-(cffi:defbitfield (message-type :int16)
-  (:unreliable-mess      #x00000001)
-  (:reliable-mess        #x00000002)
-  (:fifo-mess            #x00000004)
-  (:causal-mess          #x00000008)
-  (:agreed-mess          #x00000010)
-  (:safe-mess            #x00000020)
-  ;(:regular-mess         #x0000003f)
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (cffi:defbitfield (service-type :int)
+    (:unreliable-mess      #x00000001)
+    (:reliable-mess        #x00000002)
+    (:fifo-mess            #x00000004)
+    (:causal-mess          #x00000008)
+    (:agreed-mess          #x00000010)
+    (:safe-mess            #x00000020)
+    (:regular-mess         #x0000003f)
 
-  (:self-discard         #x00000040)
+    (:self-discard         #x00000040)
 
-  (:caused-by-join       #x00000100)
-  (:caused-by-leave      #x00000200)
-  (:caused-by-disconnect #x00000400)
-  (:caused-by-network    #x00000800)
-  (:reg-memb-mess        #x00001000)
-  (:transition-mess      #x00002000)
-  ;(:membership-mess      #x00003f00)
+    (:caused-by-join       #x00000100)
+    (:caused-by-leave      #x00000200)
+    (:caused-by-disconnect #x00000400)
+    (:caused-by-network    #x00000800)
+    (:reg-memb-mess        #x00001000)
+    (:transition-mess      #x00002000)
+    ;;(:membership-mess      #x00003f00)
 
-  ;(:reserved             #x003fc000)
+    ;;(:reserved             #x003fc000)
 
-  (:reject-mess          #x00400000)
-  (:drop-recv            #x01000000)
+    (:reject-mess          #x00400000)
+    (:drop-recv            #x01000000)
 
-  (:endian-reserved      #x80000080))
+    (:endian-reserved      #x80000080)))
 
 (defconstant +max-message+    140000
   "The maximum size of a single message.")
@@ -88,7 +89,7 @@
 (defconstant +max-group-name+ 32
   "The maximum size of a group name.")
 
-(defconstant +max-groups+     32
+(defconstant +max-groups+     1024
   "The maximum number of groups in a single API call.")
 
 ;;; Spread functions
@@ -119,7 +120,7 @@
 
 (cffi:defcfun (spread-receive "SP_receive") :int
   (handle             :int)
-  (service-type       (:pointer :int))
+  (service-type       (:pointer service-type))
   (sender             (:pointer :uchar)) ; actually :string
   (max-groups         :int)
   (num-groups         (:pointer :int))
@@ -131,7 +132,7 @@
 
 (cffi:defcfun (spread-multicast "SP_multicast") :int
   (handle         :int)
-  (service-type   :int) ;; type?
+  (service-type   service-type)
   (group          :string)
   (message-type   :int16)
   (message-length :int)
@@ -139,7 +140,7 @@
 
 (cffi:defcfun (spread-multigroup-multicast "SP_multigroup_multicast") :int
   (handle         :int)
-  (service-type   :int)
+  (service-type   service-type)
   (num-groups     :int)
   (groups         (:pointer :string))
   (message-type   :int16)
@@ -212,7 +213,7 @@
 
 (defun %extract-type (service-type)
   (declare (optimize (speed 3) (debug 0) (safety 0)))
-  (let ((type (cffi:mem-ref service-type 'message-type)))
+  (let ((type (cffi:mem-ref service-type 'service-type)))
     (cond
       ((member :caused-by-join type)            :join)
       ((or (member :caused-by-leave type)
@@ -263,60 +264,103 @@
                                          :offset    offset
                                          :max-chars +max-group-name+)))))
 
+(declaim (inline %%receive-into))
+
+(defun %%receive-into (handle buffer start end)
+  (declare (optimize (speed 3) (safety 0) (debug 0))
+           (type octet-vector buffer)
+           (type fixnum start end))
+  (let ((sender (cffi:make-shareable-byte-vector +max-group-name+)))
+    (declare (dynamic-extent sender))
+    (cffi:with-foreign-objects ((service-type    'service-type)
+                                (num-groups      :int)
+                                (message-type    :int16)
+                                (endian-mismatch :int))
+      (setf (cffi:mem-ref service-type :int)
+            #.(cffi:foreign-bitfield-value 'service-type '(:drop-recv)))
+      (let ((result
+              (with-pointers-to-vector-data ((sender-ptr sender)
+                                             (buffer-ptr buffer))
+                (spread-receive handle service-type
+                                sender-ptr
+                                0 num-groups (cffi:null-pointer)
+                                message-type endian-mismatch
+                                end (cffi:inc-pointer buffer-ptr start)))))
+        (declare (type fixnum result))
+        (cond
+          ;; Negative result => error.
+          ((minusp result)
+           (%signal-error "Error receiving" result))
+
+          ;; Positive result and service type indicates regular
+          ;; message => return regular message.
+          ((plusp (logand
+                   (cffi:mem-ref service-type :int)
+                   #.(cffi:foreign-bitfield-value 'service-type '(:regular-mess))))
+           (values :regular result))
+
+          ;; Positive result and service type does not indicate
+          ;; regular message => return membership message.
+          (t
+           (values (%extract-type service-type) nil)))))))
+
+(declaim (inline %%receive-into/sender+groups))
+
+(defun %%receive-into/sender+groups (handle buffer start end)
+  ;; SBCL won't do stack allocation otherwise
+  (declare (optimize (speed 3) (safety 0) (debug 0))
+           (type octet-vector buffer)
+           (type fixnum start end))
+  (let ((sender (cffi:make-shareable-byte-vector +max-group-name+))
+        (groups (cffi:make-shareable-byte-vector
+                 (* +max-groups+ +max-group-name+))))
+    (declare (dynamic-extent sender groups))
+    (cffi:with-foreign-objects ((service-type    'service-type)
+                                (num-groups      :int)
+                                (message-type    :int16)
+                                (endian-mismatch :int))
+      (setf (cffi:mem-ref service-type 'service-type) 0)
+      (let ((result
+              (with-pointers-to-vector-data ((sender-ptr sender)
+                                             (groups-ptr groups)
+                                             (buffer-ptr buffer))
+                (spread-receive handle service-type
+                                sender-ptr
+                                +max-groups+ num-groups groups-ptr
+                                message-type endian-mismatch
+                                end (cffi:inc-pointer buffer-ptr start)))))
+        (declare (type fixnum result))
+        (cond
+          ;; Negative result => error.
+          ((minusp result)
+           (%signal-error "Error receiving" result))
+
+          ;; Positive result and service type indicates regular
+          ;; message => return regular message.
+          ((plusp (logand
+                   (cffi:mem-ref service-type :int)
+                   #.(cffi:foreign-bitfield-value 'service-type '(:regular-mess))))
+           (values :regular result
+                   (%extract-sender sender)
+                   (%extract-groups num-groups groups)))
+
+          ;; Positive result and service type does not indicate
+          ;; regular message => return membership message.
+          (t
+           (values (%extract-type service-type) nil
+                   (%extract-sender sender)
+                   (%extract-groups num-groups groups))))))))
+
 (declaim (ftype (function (integer octet-vector non-negative-fixnum non-negative-fixnum boolean boolean)
                           (values &rest t))
                 %receive-into))
 
 (defun %receive-into (handle buffer start end return-sender? return-groups?)
-  ;; SBCL won't do stack allocation otherwise
-  (declare (optimize (speed 3) (safety 0) (debug 0)))
-  (let ((groups (cffi:make-shareable-byte-vector
-                 (* +max-groups+ +max-group-name+)))
-        (sender (cffi:make-shareable-byte-vector +max-group-name+)))
-    (declare (dynamic-extent groups sender))
-    (with-pointers-to-vector-data ((buffer-ptr buffer)
-                                   (groups-ptr groups)
-                                   (sender-ptr sender))
-      (cffi:with-foreign-objects ((service-type    '(:pointer message-type))
-                                  (num-groups      '(:pointer :int))
-                                  (message-type1   '(:pointer :int16))
-                                  (endian-mismatch '(:pointer :int)))
-        (setf (cffi:mem-ref service-type :int) 0)
-        (let ((result (spread-receive handle
-                                      service-type ; for input: 0 or DROP-RECV
-                                      sender-ptr
-                                      +max-groups+ num-groups groups-ptr
-                                      message-type1
-                                      endian-mismatch
-                                      end
-                                      (cffi:inc-pointer buffer-ptr start))))
-          (declare (type fixnum result))
-          (cond
-            ;; Negative result => error.
-            ((minusp result)
-             (%signal-error "Error receiving" result))
-
-            ;; Positive result and service type indicates regular
-            ;; message => return regular message.
-            ((plusp (logand (cffi:mem-ref service-type :int16) #x3f)) ;; TODO ugly
-             (values
-              :regular
-              result
-              (when return-sender?
-                (%extract-sender sender))
-              (when return-groups?
-                (%extract-groups num-groups groups))))
-
-            ;; Positive result and service type does not indicate
-            ;; regular message => return membership message.
-            (t
-             (values
-              (%extract-type service-type)
-              nil
-              (when return-sender?
-                (%extract-sender sender))
-              (when return-groups?
-                (%extract-groups num-groups groups))))))))))
+  (cond
+    ((not (or return-sender? return-groups?))
+     (%%receive-into handle buffer start end))
+    (t
+     (%%receive-into/sender+groups handle buffer start end))))
 
 (declaim (ftype (function (fixnum string simple-octet-vector)
                           (values)) %send-one))
