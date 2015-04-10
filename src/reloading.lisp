@@ -1,6 +1,6 @@
 ;;;; reloading.lisp --- Reloading of the Spread library after re-init.
 ;;;;
-;;;; Copyright (C) 2013 Jan Moringen
+;;;; Copyright (C) 2013, 2015 Jan Moringen
 ;;;;
 ;;;; Author: Jan Moringen <jmoringe@techfak.uni-bielefeld.de>
 
@@ -47,15 +47,15 @@ This may be unnecessary or not even make sense for some Lisps. Do
 nothing in these cases.
 
 See `disable-reload-spread-library'."
-  #+sbcl (let ((init-hook (lambda ()
-                            (reload-spread-library :if-fails if-fails))))
-           ;; Remove previously installed init hook, if any.
-           (when *init-hook*
-             (removef sb-ext:*init-hooks* *init-hook*))
-           (setf *init-hook* init-hook)
+  (let ((init-hook (lambda ()
+                     (reload-spread-library :if-fails if-fails))))
+    ;; Remove previously installed init hook, if any.
+    (when *init-hook*
+      (removef uiop:*image-restore-hook* *init-hook*))
+    (setf *init-hook* init-hook)
 
-           (pushnew 'unload-spread-library sb-ext:*save-hooks*)
-           (push    init-hook              sb-ext:*init-hooks*)))
+    (uiop:register-image-restore-hook init-hook nil)
+    (uiop:register-image-dump-hook    'unload-spread-library nil)))
 
 (defun disable-reload-spread-library ()
   "Arrange for the currently used Spread library to persist across
@@ -65,7 +65,6 @@ This may be unnecessary or not even make sense for some Lisps. Do
 nothing in these cases.
 
 See `enable-reload-spread-library'."
-  #+sbcl (progn
-           (removef sb-ext:*save-hooks* 'unload-spread-library)
-           (when *init-hook*
-             (removef sb-ext:*init-hooks* *init-hook*))))
+  (removef uiop::*image-dump-hook* 'unload-spread-library)
+  (when *init-hook*
+    (removef uiop::*image-restore-hook* *init-hook*)))
