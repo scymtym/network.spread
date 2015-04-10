@@ -1,6 +1,6 @@
 ;;;; network.spread.asd --- System definition for the network.spread system.
 ;;;;
-;;;; Copyright (C) 2011, 2012, 2013, 2014 Jan Moringen
+;;;; Copyright (C) 2011, 2012, 2013, 2014, 2015 Jan Moringen
 ;;;;
 ;;;; Author: Jan Moringen <jmoringe@techfak.uni-bielefeld.de>
 
@@ -65,7 +65,7 @@ See `version/list' for details on keyword parameters."
   :author      "Jan Moringen <jmoringe@techfak.uni-bielefeld.de>"
   :maintainer  "Jan Moringen <jmoringe@techfak.uni-bielefeld.de>"
   :version     #.(version/string)
-  :license     "LLGPLv3; see COPYING file for details."
+  :license     "LLGPLv3" ; see COPYING file for details.
   :description "This system provides a Common Lisp interface to the
 spread group communication system."
   #+sbcl :defsystem-depends-on #+sbcl (:sb-posix)
@@ -115,7 +115,7 @@ spread group communication system."
   :author      "Jan Moringen <jmoringe@techfak.uni-bielefeld.de>"
   :maintainer  "Jan Moringen <jmoringe@techfak.uni-bielefeld.de>"
   :version     #.(version/string)
-  :license     "LLGPLv3; see COPYING file for details."
+  :license     "LLGPLv3" ; see COPYING file for details.
   :description "This system provides unit tests for the network.spread system."
   :depends-on  ((:version :network.spread #.(version/string))
 
