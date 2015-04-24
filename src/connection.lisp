@@ -132,7 +132,10 @@ at groups, but not for sending messages to groups."))
                (dynamic-extent buffer))
       (let+ (((&values received-bytes sender groups)
               (apply #'receive-into connection buffer args)))
-        (values (subseq buffer 0 received-bytes) sender groups)))))
+        (when received-bytes
+          (locally (declare (type (integer 0 #.+maximum-message-data-length+)
+                                  received-bytes))
+            (values (subseq buffer 0 received-bytes) sender groups)))))))
 
 (defmethod send-bytes :before ((connection  connection)
                                (destination t)
