@@ -93,11 +93,11 @@ spread group communication system."
 
                               (:file       "reloading")
 
-                              #+sbcl
-                              (:file       "daemon")
+                              (:file       "daemon"
+                               :if-feature :sbcl)
 
-                              #+(and sbcl (not win32))
-                              (:file       "fix-signal-handlers"))))
+                              (:file       "fix-signal-handlers"
+                               :if-feature (:and :sbcl (:not :win32))))))
 
   :in-order-to ((test-op (test-op :network.spread-test))))
 
