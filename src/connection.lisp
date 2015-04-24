@@ -1,6 +1,6 @@
 ;;;; connection.lisp --- Class representing connections to the Spread network.
 ;;;;
-;;;; Copyright (C) 2011, 2012, 2013 Jan Moringen
+;;;; Copyright (C) 2011, 2012, 2013, 2015 Jan Moringen
 ;;;;
 ;;;; Author: Jan Moringen <jmoringe@techfak.uni-bielefeld.de>
 
@@ -104,12 +104,12 @@ at groups, but not for sending messages to groups."))
           ;; Receive next message, blocking if necessary. Handle
           ;; membership messages via hooks (callbacks). Keep receiving
           ;; until the message is a regular message.
-          (let+ (((&values type received sender groups)
+          (let+ (((&values type received-bytes sender groups)
                   (%receive-into
                    handle buffer start end return-sender? return-groups?)))
             (case type
               (:regular ; Return regular messages.
-               (return (values received sender groups)))
+               (return (values received-bytes sender groups)))
               (:join    ; Run hooks for membership messages.
                (run-hook
                 (object-hook connection 'join-hook) sender groups))
@@ -130,9 +130,9 @@ at groups, but not for sending messages to groups."))
     (let ((buffer (make-octet-vector +max-message+)))
       (declare (type simple-octet-vector buffer)
                (dynamic-extent buffer))
-      (let+ (((&values received sender groups)
+      (let+ (((&values received-bytes sender groups)
               (apply #'receive-into connection buffer args)))
-        (values (subseq buffer 0 received) sender groups)))))
+        (values (subseq buffer 0 received-bytes) sender groups)))))
 
 (defmethod send-bytes :before ((connection  connection)
                                (destination t)
