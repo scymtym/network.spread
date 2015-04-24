@@ -97,7 +97,12 @@ at groups, but not for sending messages to groups."))
                          (return-groups? t))
   (check-type buffer simple-octet-vector)
 
-  (let ((handle (slot-value connection 'handle)))
+  (let ((handle    (slot-value connection 'handle))
+        (handlers? (when (or (hooks:hook-handlers (hooks:object-hook
+                                                   connection 'join-hook))
+                             (hooks:hook-handlers (hooks:object-hook
+                                                   connection 'leave-hook)))
+                     t)))
     ;; Do not enter/break out of loop when non-blocking and no
     ;; messages queued.
     (iter (while (or block? (%poll handle)))
@@ -106,7 +111,9 @@ at groups, but not for sending messages to groups."))
           ;; until the message is a regular message.
           (let+ (((&values type received-bytes sender groups)
                   (%receive-into
-                   handle buffer start end return-sender? return-groups?)))
+                   handle buffer start end
+                   (or handlers? return-sender?)
+                   (or handlers? return-groups?))))
             (case type
               (:regular ; Return regular messages.
                (return (values received-bytes sender groups)))
