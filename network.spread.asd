@@ -79,35 +79,25 @@ spread group communication system."
 
                 :cl-hooks)
   :components  ((:module     "src"
+                 :serial     t
                  :components ((:file       "package")
-                              (:file       "types"
-                               :depends-on ("package"))
-                              (:file       "conditions"
-                               :depends-on ("package" "variables"))
-                              (:file       "protocol"
-                               :depends-on ("package"))
-                              (:file       "ffi"
-                               :depends-on ("package" "types"))
-                              (:file       "variables"
-                               :depends-on ("package" "ffi"))
-                              (:file       "connection"
-                               :depends-on ("package" "types"
-                                            "conditions" "ffi"
-                                            "protocol" "variables"))
-                              (:file       "macros"
-                               :depends-on ("package" "connection"))
 
-                              (:file       "reloading"
-                               :depends-on ("ffi"))
+                              (:file       "types")
+                              (:file       "ffi")
+
+                              (:file       "variables")
+                              (:file       "conditions")
+                              (:file       "protocol")
+                              (:file       "connection")
+                              (:file       "macros")
+
+                              (:file       "reloading")
 
                               #+sbcl
-                              (:file       "daemon"
-                               :depends-on ("package" "conditions"
-                                            "variables"))
+                              (:file       "daemon")
 
                               #+(and sbcl (not win32))
-                              (:file       "fix-signal-handlers"
-                               :depends-on ("protocol")))))
+                              (:file       "fix-signal-handlers"))))
 
   :in-order-to ((test-op (test-op :network.spread-test))))
 
