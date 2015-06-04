@@ -413,9 +413,5 @@
          :format-arguments args
          :code
          (etypecase value
-           (fixnum
-            (cffi::%foreign-enum-keyword
-             (funcall (cffi::find-type-parser 'return-value))
-             value :errorp t))
-           (keyword
-            value))))
+           (fixnum  (cffi:foreign-enum-keyword 'return-value value :errorp t))
+           (keyword value))))
