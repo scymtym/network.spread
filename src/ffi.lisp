@@ -306,7 +306,7 @@
 
 (declaim (inline %%receive-into/sender+groups))
 
-(defun %%receive-into/sender+groups (handle buffer start end)
+(defun %%receive-into/sender+groups (handle buffer start end sender? groups?)
   ;; SBCL won't do stack allocation otherwise
   (declare (optimize (speed 3) (safety 0) (debug 0))
            (type octet-vector buffer)
@@ -341,15 +341,15 @@
                    (cffi:mem-ref service-type :int)
                    #.(cffi:foreign-bitfield-value 'service-type '(:regular-mess))))
            (values :regular result
-                   (%extract-sender sender)
-                   (%extract-groups num-groups groups)))
+                   (when sender? (%extract-sender sender))
+                   (when groups? (%extract-groups num-groups groups))))
 
           ;; Positive result and service type does not indicate
           ;; regular message => return membership message.
           (t
            (values (%extract-type service-type) nil
-                   (%extract-sender sender)
-                   (%extract-groups num-groups groups))))))))
+                   (when sender? (%extract-sender sender))
+                   (when groups? (%extract-groups num-groups groups)))))))))
 
 (declaim (ftype (function (integer octet-vector non-negative-fixnum non-negative-fixnum boolean boolean)
                           (values &rest t))
@@ -360,7 +360,8 @@
     ((not (or return-sender? return-groups?))
      (%%receive-into handle buffer start end))
     (t
-     (%%receive-into/sender+groups handle buffer start end))))
+     (%%receive-into/sender+groups
+      handle buffer start end return-sender? return-groups?))))
 
 (declaim (ftype (function (fixnum string simple-octet-vector)
                           (values)) %send-one))

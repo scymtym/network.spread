@@ -272,9 +272,10 @@ be send but larger messages signal an error.")
 
       ;; But this one
       (send sender "group" "bar")
-      (ensure-same (receive receiver :block?         t
-                                     :return-groups? expected-group
-                                     :return-sender? sender?)
+      (ensure-same (receive receiver
+                            :block?         t
+                            :return-groups? (when expected-group t)
+                            :return-sender? sender?)
                    (values expected-message
                            (when sender?
                              sender-name)
@@ -284,7 +285,7 @@ be send but larger messages signal an error.")
 
       ;; Non-blocking receive should just return.
       (receive receiver :block?         nil
-                        :return-groups? expected-group
+                        :return-groups? (when expected-group t)
                         :return-sender? sender?)))
 
   (addtest (connection-root
@@ -301,7 +302,7 @@ be send but larger messages signal an error.")
         (send sender "group" "bar")
         (ensure-same (receive-into receiver buffer
                                    :block?         t
-                                   :return-groups? expected-group
+                                   :return-groups? (when expected-group t)
                                    :return-sender? sender?)
                      (values (length expected-message)
                              (when sender?
@@ -315,13 +316,13 @@ be send but larger messages signal an error.")
         (ensure-condition 'simple-spread-error
           (receive-into receiver (make-octet-vector 2)
                         :block?         t
-                        :return-groups? expected-group
+                        :return-groups? (when expected-group t)
                         :return-sender? sender?))
 
         ;; Non-blocking receive should just return.
         (receive-into receiver buffer
                       :block?         nil
-                      :return-groups? expected-group
+                      :return-groups? (when expected-group t)
                       :return-sender? sender?)))))
 
 (addtest (connection-root
