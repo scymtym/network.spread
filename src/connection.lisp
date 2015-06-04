@@ -144,37 +144,54 @@ at groups, but not for sending messages to groups."))
                                   received-bytes))
             (values (subseq buffer 0 received-bytes) sender groups)))))))
 
-(defmethod send-bytes :before ((connection  connection)
-                               (destination t)
-                               (data        simple-array))
-  (unless (<= (length data) +maximum-message-data-length+)
-    (error 'message-too-long
-           :data data)))
+(flet ((check-data (data)
+         (check-type data simple-octet-vector)
+         (unless (<= (length data) +maximum-message-data-length+)
+           (error 'message-too-long :data data)))
+       (prepare-destination (destination)
+         (etypecase destination
+           (simple-octet-vector
+            destination)
+           (octet-vector
+            (coerce destination 'simple-octet-vector))
+           (string
+            (sb-ext:string-to-octets destination :external-format :ascii)))))
 
-(defmethod send-bytes ((connection  connection)
-                       (destination string)
-                       (data        simple-array))
-  (%send-one (slot-value connection 'handle) destination data))
+  (defmethod send-bytes ((connection  connection)
+                         (destination simple-array)
+                         (data        simple-array))
+    (typecase destination
+      (simple-octet-vector
+       (check-data data)
+       (%send-one (slot-value connection 'handle) destination data))
+      (t
+       (call-next-method))))
 
-;; Relies on the `string'-specialized method
-(defmethod send-bytes ((connection  connection)
-                       (destination sequence)
-                       (data        simple-array))
-  (%send-multiple (slot-value connection 'handle) destination data))
+  (defmethod send-bytes ((connection  connection)
+                         (destination string)
+                         (data        simple-array))
+    (check-data data)
+    (%send-one (slot-value connection 'handle)
+               (prepare-destination destination)
+               data))
+
+  (defmethod send-bytes ((connection  connection)
+                         (destination sequence)
+                         (data        simple-array))
+    (check-data data)
+    (%send-multiple (slot-value connection 'handle)
+                    (map 'vector #'prepare-destination destination)
+                    data)))
 
 (defmethod send ((connection  connection)
                  (destination string)
                  (data        simple-array))
-  (check-type data simple-octet-vector)
-
   (send-bytes connection destination data))
 
 ;; Relies on the `string'-specialized method
 (defmethod send ((connection  connection)
                  (destination sequence)
                  (data        simple-array))
-  (check-type data simple-octet-vector)
-
   (if (length= 1 destination)
       (send-bytes connection (elt destination 0) data)
       (send-bytes connection destination data)))

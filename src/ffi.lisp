@@ -133,7 +133,7 @@
 (cffi:defcfun (spread-multicast "SP_multicast") :int
   (handle         :int)
   (service-type   service-type)
-  (group          :string)
+  (group          (:pointer :uchar))
   (message-type   :int16)
   (message-length :int)
   (message        (:pointer :uchar)))
@@ -142,7 +142,7 @@
   (handle         :int)
   (service-type   service-type)
   (num-groups     :int)
-  (groups         (:pointer :string))
+  (groups         (:pointer :uchar))
   (message-type   :int16)
   (message-length :int)
   (message        (:pointer :uchar)))
@@ -363,46 +363,57 @@
      (%%receive-into/sender+groups
       handle buffer start end return-sender? return-groups?))))
 
-(declaim (ftype (function (fixnum string simple-octet-vector)
-                          (values)) %send-one))
+(declaim (ftype (function (fixnum simple-octet-vector simple-octet-vector) (values))
+                %send-one))
 
 (defun %send-one (handle destination data)
-  (cffi:with-pointer-to-vector-data (message data)
-    (let ((result (spread-multicast handle
-                                    2          ; service-type
-                                    destination
-                                    0          ; message-type
-                                    (length data) message)))
-      (cond
-        ((not (minusp result))
-         (values))
-
-        (t
-         (%signal-error "Sending failed" result))))))
-
-(declaim (ftype (function (fixnum sequence simple-octet-vector)
-                          (values)) %send-multiple))
-
-(defun %send-multiple (handle destinations data)
-  (cffi:with-foreign-string
-      (groups (apply #'concatenate 'string
-                     (loop :for destination :being :the :elements :in destinations
-                        :collect destination
-                        :collect (make-list
-                                  (- +max-group-name+ (length destination))
-                                  :initial-element #\Nul))))
+  (declare (optimize (speed 3) (safety 0) (debug 0)))
+  (let ((length (length destination)))
+    (when (< length +max-group-name+)
+      (setf (aref destination length) 0)))
+  (cffi:with-pointer-to-vector-data (group-ptr destination)
     (cffi:with-pointer-to-vector-data (message data)
-      (let ((result (spread-multigroup-multicast handle
-                                                 2          ; service-type
-                                                 (length destinations) groups
-                                                 0          ; message-type
-                                                 (length data) message)))
+      (let ((result (spread-multicast handle
+                                      2 ; service-type
+                                      group-ptr
+                                      0 ; message-type
+                                      (length data) message)))
+        (declare (type fixnum result))
         (cond
           ((not (minusp result))
            (values))
 
           (t
-           (%signal-error "Multigroup send failed" result)))))))
+           (%signal-error "Sending failed" result)))))))
+
+(declaim (ftype (function (fixnum sequence simple-octet-vector) (values))
+                %send-multiple))
+
+(defun %send-multiple (handle destinations data)
+  (declare (optimize (speed 3) (safety 0) (debug 0)))
+  (let ((num-groups (length destinations))
+        (groups     (cffi:make-shareable-byte-vector (* +max-groups+ +max-group-name+))))
+    (declare (dynamic-extent groups))
+    (loop :for destination :of-type octet-vector :being :the :elements :in destinations
+       :for offset :from 0 :by +max-group-name+
+       :for length = (length destination) :do
+       (setf (subseq groups offset (+ offset length)) destination)
+       (when (< length)
+         (setf (aref groups (+ offset length)) 0)))
+    (cffi:with-pointer-to-vector-data (groups-ptr groups)
+      (cffi:with-pointer-to-vector-data (message data)
+        (let ((result (spread-multigroup-multicast handle
+                                                   2          ; service-type
+                                                   num-groups groups-ptr
+                                                   0          ; message-type
+                                                   (length data) message)))
+          (declare (type fixnum result))
+          (cond
+            ((not (minusp result))
+             (values))
+
+            (t
+             (%signal-error "Multigroup send failed" result))))))))
 
 ;;; Utility functions
 
