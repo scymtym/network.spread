@@ -1,6 +1,6 @@
 ;;;; connection.lisp --- Unit tests for the connection class.
 ;;;;
-;;;; Copyright (C) 2011, 2012, 2013 Jan Moringen
+;;;; Copyright (C) 2011, 2012, 2013, 2015 Jan Moringen
 ;;;;
 ;;;; Author: Jan Moringen <jmoringe@techfak.uni-bielefeld.de>
 
@@ -22,7 +22,7 @@
 (defun drain-messages (connection)
   "Drain all pending messages from CONNECTION."
   (sleep .2)
-  (iter:iter (iter:repeat 10) (receive connection :block? nil)))
+  (loop :repeat 10 :do (receive connection :block? nil)))
 
 (defun check-membership-event (joins  expected-joins
                                leaves expected-leaves)

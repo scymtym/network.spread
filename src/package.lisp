@@ -1,6 +1,6 @@
 ;;;; package.lisp --- Package definition network.spread system.
 ;;;;
-;;;; Copyright (C) 2011, 2012, 2013 Jan Moringen
+;;;; Copyright (C) 2011, 2012, 2013, 2015 Jan Moringen
 ;;;;
 ;;;; Author: Jan Moringen <jmoringe@techfak.uni-bielefeld.de>
 
@@ -8,7 +8,6 @@
   (:use
    #:cl
    #:alexandria
-   #:iterate
    #:let-plus
 
    #:nibbles

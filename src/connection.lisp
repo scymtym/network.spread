@@ -105,24 +105,24 @@ at groups, but not for sending messages to groups."))
                      t)))
     ;; Do not enter/break out of loop when non-blocking and no
     ;; messages queued.
-    (iter (while (or block? (%poll handle)))
-          ;; Receive next message, blocking if necessary. Handle
-          ;; membership messages via hooks (callbacks). Keep receiving
-          ;; until the message is a regular message.
-          (let+ (((&values type received-bytes sender groups)
-                  (%receive-into
-                   handle buffer start end
-                   (or handlers? return-sender?)
-                   (or handlers? return-groups?))))
-            (case type
-              (:regular ; Return regular messages.
-               (return (values received-bytes sender groups)))
-              (:join    ; Run hooks for membership messages.
-               (run-hook
-                (object-hook connection 'join-hook) sender groups))
-              (:leave   ; Same for leave; ignore other messages.
-               (run-hook
-                (object-hook connection 'leave-hook) sender groups)))))))
+    (loop :while (or block? (%poll handle)) :do
+       ;; Receive next message, blocking if necessary. Handle
+       ;; membership messages via hooks (callbacks). Keep receiving
+       ;; until the message is a regular message.
+       (let+ (((&values type received-bytes sender groups)
+               (%receive-into
+                handle buffer start end
+                (or handlers? return-sender?)
+                (or handlers? return-groups?))))
+         (case type
+           (:regular ; Return regular messages.
+            (return (values received-bytes sender groups)))
+           (:join    ; Run hooks for membership messages.
+            (run-hook
+             (object-hook connection 'join-hook) sender groups))
+           (:leave   ; Same for leave; ignore other messages.
+            (run-hook
+             (object-hook connection 'leave-hook) sender groups)))))))
 
 (defmethod receive ((connection connection)
                     &rest args

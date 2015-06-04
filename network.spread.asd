@@ -70,7 +70,6 @@ See `version/list' for details on keyword parameters."
 spread group communication system."
   #+sbcl :defsystem-depends-on #+sbcl (:sb-posix)
   :depends-on  (:alexandria
-                :iterate
                 :let-plus
 
                 :nibbles

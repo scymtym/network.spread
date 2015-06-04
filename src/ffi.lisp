@@ -243,26 +243,26 @@
 (defun %extract-groups (num-groups groups)
   (declare (optimize (speed 3) (debug 0) (safety 0)))
   (let ((num-groups (cffi:mem-ref num-groups :int)))
-
+    (declare (type (and fixnum (integer * #.+max-groups+)) num-groups))
     (when (minusp num-groups)
       (return-from %extract-groups :group-buffer-too-small))
 
-    (iter (repeat num-groups)
-          (for (the fixnum offset) :from 0 :by +max-group-name+)
-          (collect
-            #+sbcl
-            (sb-ext:octets-to-string
-             groups :external-format :ascii
-                    :start offset
-                    :end   (or (position 0 groups
-                                         :start offset
-                                         :end   (+ offset +max-group-name+))
-                               (+ offset +max-group-name+)))
-            #-sbcl
-            (cffi:foreign-string-to-lisp groups
-                                         :encoding  :ascii
-                                         :offset    offset
-                                         :max-chars +max-group-name+)))))
+    (loop :repeat num-groups
+       :for offset :of-type fixnum :from 0 :by +max-group-name+
+       :collect
+       #+sbcl
+       (sb-ext:octets-to-string
+        groups :external-format :ascii
+        :start offset
+        :end   (or (position 0 groups
+                             :start offset
+                             :end   (+ offset +max-group-name+))
+                   (+ offset +max-group-name+)))
+       #-sbcl
+       (cffi:foreign-string-to-lisp groups
+                                    :encoding  :ascii
+                                    :offset    offset
+                                    :max-chars +max-group-name+))))
 
 (declaim (inline %%receive-into))
 
@@ -384,12 +384,12 @@
 
 (defun %send-multiple (handle destinations data)
   (cffi:with-foreign-string
-      (groups  (apply #'concatenate 'string
-                      (iter (for destination in-sequence destinations)
-                            (collect destination)
-                            (collect (make-list
-                                      (- +max-group-name+ (length destination))
-                                      :initial-element #\Nul)))))
+      (groups (apply #'concatenate 'string
+                     (loop :for destination :being :the :elements :in destinations
+                        :collect destination
+                        :collect (make-list
+                                  (- +max-group-name+ (length destination))
+                                  :initial-element #\Nul))))
     (cffi:with-pointer-to-vector-data (message data)
       (let ((result (spread-multigroup-multicast handle
                                                  2          ; service-type
