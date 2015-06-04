@@ -405,8 +405,7 @@
 
 ;;; Utility functions
 
-(declaim (ftype (function (string (or fixnum keyword) &rest t) *) %signal-error)
-         (inline %signal-error))
+(declaim (ftype (function (string (or fixnum keyword) &rest t) *) %signal-error))
 
 (defun %signal-error (format value &rest args)
   (error 'simple-spread-error
