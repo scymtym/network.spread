@@ -30,6 +30,9 @@
    #:message-too-long
    #:message-too-long-data
 
+   #:group-too-long-error
+   #:group-too-long-error-group
+
    #:failed-to-start-daemon
    #:failed-to-start-daemon-program
    #:failed-to-start-daemon-exit-code
@@ -44,6 +47,7 @@
   ;; Variables
   (:export
    #:+maximum-message-data-length+
+   #:+maximum-group-name-length+
 
    #:*default-port*
    #:*default-daemon-program*)

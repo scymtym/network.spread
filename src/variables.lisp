@@ -1,6 +1,6 @@
 ;;;; variables.lisp --- Global/special variables used in network.spread.
 ;;;;
-;;;; Copyright (C) 2011, 2012, 2013 Jan Moringen
+;;;; Copyright (C) 2011, 2012, 2013, 2015 Jan Moringen
 ;;;;
 ;;;; Author: Jan Moringen <jmoringe@techfak.uni-bielefeld.de>
 
@@ -9,7 +9,10 @@
 ;;; Network communication-related quantities
 
 (defconstant +maximum-message-data-length+ +max-message+
-  "The maximum length (in bytes) of the data in a spread message.")
+  "The maximum length (in octets) of the data in a Spread message.")
+
+(defconstant +maximum-group-name-length+ +max-group-name+
+  "The maximum length (in octets) of a Spread group name.")
 
 ;;; Daemon-related parameters
 

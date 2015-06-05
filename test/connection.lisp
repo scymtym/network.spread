@@ -115,11 +115,11 @@ EXPECTED-LEAVES."
   membership-conditions
 
   (with-connection (connection daemon)
-    (ensure-condition 'spread-client-error
+    (ensure-condition 'group-too-long-error
       (join connection (make-string (* 2 +max-group-name+)
                                     :initial-element #\a)))
 
-    (ensure-condition 'spread-client-error
+    (ensure-condition 'group-too-long-error
       (leave connection (make-string (* 2 +max-group-name+)
                                      :initial-element #\a)))))
 
@@ -203,6 +203,13 @@ EXPECTED-LEAVES."
   send/failure
 
   (let ((connection (connect daemon)))
+    ;; Too long group name should signal `group-too-long-error'.
+    (ensure-condition 'group-too-long-error
+      (send connection
+            (make-string (* 2 +maximum-group-name-length+)
+                         :initial-element #\a)
+            "does-not-matter"))
+
     (disconnect connection)
 
     ;; Single destination.

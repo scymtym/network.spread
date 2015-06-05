@@ -71,8 +71,8 @@
    :data (missing-required-initarg 'message-too-long :data))
   (:report
    (lambda (condition stream)
-     (format stream "~@<Data is ~D octets long, which longer than the ~
-                     maximum message length ~D.~@:>"
+     (format stream "~@<Data is ~:D octets long, which longer than the ~
+                     maximum message length ~:D.~@:>"
              (length (message-too-long-data condition))
              +maximum-message-data-length+)))
   (:documentation
@@ -80,6 +80,23 @@
     octet-vector which has more than `+maximum-message-data-length+'
     octets."))
 
+(define-condition group-too-long-error (spread-error)
+  ((group :initarg  :group
+          :type     octet-vector
+          :reader   group-too-long-error-group
+          :documentation
+          "The group name that caused the error."))
+  (:default-initargs
+   :group (missing-required-initarg 'group-too-long-error :group))
+  (:report
+   (lambda (condition stream)
+     (format stream "~@<Group name is ~:D octets long, which is longer
+                     than the maximum group name length ~:D.~@:>"
+             (length (group-too-long-error-group condition))
+             +maximum-group-name-length+)))
+  (:documentation
+   "This error is signaled when a Spread group is specified which has
+    more than `+maximum-group-name-length+' octets."))
 
 ;;; Daemon-related conditions
 

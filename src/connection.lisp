@@ -6,6 +6,20 @@
 
 (cl:in-package #:network.spread)
 
+;;; Utilities
+
+(declaim (inline check-group-name))
+(defun check-group-name (name)
+  (unless (<= (length name)  +maximum-group-name-length+)
+    (error 'group-too-long-error
+           :group (etypecase name
+                    (string       (sb-ext:string-to-octets name))
+                    (octet-vector name))))
+  name)
+(declaim (notinline check-group-name))
+
+;;; `connection'
+
 (defclass connection ()
   ((handle      :initarg  :handle
                 :type     integer
@@ -65,7 +79,7 @@ at groups, but not for sending messages to groups."))
   (%disconnect (slot-value connection 'handle)))
 
 (defmethod join ((connection connection) (group string))
-  (%join (slot-value connection 'handle) group))
+  (%join (slot-value connection 'handle) (check-group-name group)))
 
 (defmethod join :after ((connection connection) (group string))
   (pushnew group (slot-value connection 'groups) :test #'string=))
@@ -75,7 +89,7 @@ at groups, but not for sending messages to groups."))
   (map nil (curry #'join connection) group))
 
 (defmethod leave ((connection connection) (group string))
-  (%leave (slot-value connection 'handle) group))
+  (%leave (slot-value connection 'handle) (check-group-name group)))
 
 (defmethod leave :after ((connection connection) (group string))
   (removef (slot-value connection 'groups) group :test #'string=))
@@ -144,18 +158,23 @@ at groups, but not for sending messages to groups."))
                                   received-bytes))
             (values (subseq buffer 0 received-bytes) sender groups)))))))
 
-(flet ((check-data (data)
-         (check-type data simple-octet-vector)
-         (unless (<= (length data) +maximum-message-data-length+)
-           (error 'message-too-long :data data)))
-       (prepare-destination (destination)
-         (etypecase destination
-           (simple-octet-vector
-            destination)
-           (octet-vector
-            (coerce destination 'simple-octet-vector))
-           (string
-            (sb-ext:string-to-octets destination :external-format :ascii)))))
+(labels ((check-data (data)
+           (check-type data simple-octet-vector)
+           (unless (<= (length data) +maximum-message-data-length+)
+             (error 'message-too-long :data data)))
+         (maybe-coerce-destination (destination)
+           (etypecase destination
+             (simple-octet-vector
+              destination)
+             (octet-vector
+              (coerce destination 'simple-octet-vector))
+             (string
+              (sb-ext:string-to-octets destination :external-format :ascii))))
+         (prepare-destination (destination)
+           (let ((destination (maybe-coerce-destination destination)))
+             (declare (type simple-octet-vector destination)
+                      (inline check-group-name))
+             (check-group-name destination))))
 
   (defmethod send-bytes ((connection  connection)
                          (destination simple-array)
