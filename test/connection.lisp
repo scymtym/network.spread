@@ -51,15 +51,15 @@ EXPECTED-LEAVES."
            (ensure-null (connection-groups connection)))
       (disconnect connection))
 
-    (ensure-condition 'spread-error
+    (ensure-condition 'spread-client-error
       (disconnect connection)))
 
   ;; Illegal spread name.
-  (ensure-condition 'spread-error
+  (ensure-condition 'spread-client-error
     (connect "no-such-daemon"))
 
   ;; Not cool enough to use that port.
-  (ensure-condition 'spread-error
+  (ensure-condition 'spread-client-error
     (connect "31337")))
 
 (addtest (connection-root
@@ -69,8 +69,8 @@ EXPECTED-LEAVES."
   connect-restart
 
   (handler-bind
-      ((spread-error
-        #'(lambda (condition)
+      ((spread-client-error
+        (lambda (condition)
             (ensure (find-restart 'retry))
             (ensure (find-restart 'use-daemon))
             (invoke-restart (find-restart 'use-daemon) daemon))))
@@ -115,11 +115,11 @@ EXPECTED-LEAVES."
   membership-conditions
 
   (with-connection (connection daemon)
-    (ensure-condition 'spread-error
+    (ensure-condition 'spread-client-error
       (join connection (make-string (* 2 +max-group-name+)
                                     :initial-element #\a)))
 
-    (ensure-condition 'spread-error
+    (ensure-condition 'spread-client-error
       (leave connection (make-string (* 2 +max-group-name+)
                                      :initial-element #\a)))))
 
@@ -206,11 +206,11 @@ EXPECTED-LEAVES."
     (disconnect connection)
 
     ;; Single destination.
-    (ensure-condition 'spread-error
+    (ensure-condition 'spread-client-error
       (send connection "does-not-matter" "foo"))
 
     ;; Multiple destinations.
-    (ensure-condition 'spread-error
+    (ensure-condition 'spread-client-error
       (send connection '("foo" "bar") "foo"))))
 
 (addtest (connection-root
@@ -244,7 +244,7 @@ be send but larger messages signal an error.")
   (let ((connection (connect daemon)))
     (disconnect connection)
 
-    (ensure-condition 'spread-error (receive connection))))
+    (ensure-condition 'spread-client-error (receive connection))))
 
 (macrolet
     ((with-receive-test-case-context ((&key (group "group")) &body body)
@@ -311,9 +311,9 @@ be send but larger messages signal an error.")
                                (list expected-group)))
                      :test #'equalp)
 
-        ;; Buffer too small => simple-spread-error: buffer-too-short
+        ;; Buffer too small => spread-client-error: buffer-too-short
         (send sender "group" "bar")
-        (ensure-condition 'simple-spread-error
+        (ensure-condition 'spread-client-error
           (receive-into receiver (make-octet-vector 2)
                         :block?         t
                         :return-groups? (when expected-group t)
@@ -331,7 +331,6 @@ be send but larger messages signal an error.")
   print
 
   (with-connection (connection daemon)
-    (ensure
-     (not (emptyp
-           (with-output-to-string (stream)
-             (format stream "~A" connection)))))))
+    (ensure (not (emptyp
+                  (with-output-to-string (stream)
+                    (format stream "~A" connection)))))))

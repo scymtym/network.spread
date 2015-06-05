@@ -71,6 +71,7 @@ spread group communication system."
   #+sbcl :defsystem-depends-on #+sbcl (:sb-posix)
   :depends-on  (:alexandria
                 :let-plus
+                :more-conditions
 
                 :nibbles
                 :cffi

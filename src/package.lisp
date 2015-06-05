@@ -9,6 +9,7 @@
    #:cl
    #:alexandria
    #:let-plus
+   #:more-conditions
 
    #:nibbles
    #:hooks)
@@ -19,9 +20,9 @@
   ;; Conditions
   (:export
    #:spread-error
-   #:spread-error-code
 
-   #:simple-spread-error
+   #:spread-client-error
+   #:spread-error-code
 
    #:connect-failed
    #:spread-error-name

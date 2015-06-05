@@ -1,6 +1,6 @@
 ;;;; ffi.lisp --- Spread foreign library and functions.
 ;;;;
-;;;; Copyright (C) 2011, 2012, 2013, 2014 Jan Moringen
+;;;; Copyright (C) 2011, 2012, 2013, 2014, 2015 Jan Moringen
 ;;;;
 ;;;; Author: Jan Moringen <jmoringe@techfak.uni-bielefeld.de>
 
@@ -420,7 +420,7 @@
 (declaim (ftype (function (string (or fixnum keyword) &rest t) *) %signal-error))
 
 (defun %signal-error (format value &rest args)
-  (error 'simple-spread-error
+  (error 'simple-spread-client-error
          :format-control   format
          :format-arguments args
          :code
