@@ -6,28 +6,25 @@
 
 (cl:in-package #:network.spread.test)
 
-(deftestsuite daemon-suite (root)
-  ()
-  (:documentation
-   "Test suite for daemon-related functions."))
+(def-suite :network.spread.daemon
+  :in :network.spread
+  :description
+  "Test suite for daemon-related functions.")
+(in-suite :network.spread.daemon)
 
-(addtest (daemon-suite
-          :documentation
-          "Smoke test for starting and stopping a spread daemon using
-`start-daemon' and `stop-daemon' respectively.")
-  smoke
+(test smoke
+  "Smoke test for starting and stopping a Spread daemon using
+   `start-daemon' and `stop-daemon' respectively."
 
-  (let ((daemon (start-daemon :port (+ port 3))))
-    (ensure (not (null daemon)))
+  (let ((daemon (start-daemon :port (+ *port* 3))))
+    (is-true daemon)
     (stop-daemon daemon)))
 
-(addtest (daemon-suite
-          :documentation
-          "Check that errors such as starting two spread daemons with
-identical ports are detected and reported.")
-  startup-failure
+(test startup-failure
+  "Check that errors such as starting two Spread daemons with
+   identical ports are detected and reported."
 
-  (with-daemon (:port (+ port 6))
-    (ensure-condition 'failed-to-start-daemon
-      (with-daemon (:port         (+ port 6)
+  (with-daemon (:port (+ *port* 6))
+    (signals failed-to-start-daemon
+      (with-daemon (:port         (+ *port* 6)
                     :num-attempts 1)))))

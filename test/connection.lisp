@@ -12,12 +12,11 @@
 
 (defun check-groups (connection expected context)
   (let ((groups (copy-seq (connection-groups connection))))
-    (ensure-same groups expected
-                 :test      #'alexandria:set-equal
-                 :report    "~@<~A, the connection ~A is a member of the ~
-                             groups ~{~S ~^, ~}, not the groups ~
-                             ~{~S~^, ~}.~@:>"
-                 :arguments (context connection groups expected))))
+    (is (set-equal expected groups)
+        "~@<~A, the connection ~A is a member of the
+         groups ~{~S ~^, ~}, not the groups
+         ~{~S~^, ~}.~@:>"
+        context connection groups expected)))
 
 (defun drain-messages (connection)
   "Drain all pending messages from CONNECTION."
@@ -27,61 +26,56 @@
 (defun check-membership-event (joins  expected-joins
                                leaves expected-leaves)
   "Verify JOINS and LEAVES against EXPECTED-JOINS and
-EXPECTED-LEAVES."
-  (ensure-same joins  expected-joins  :test (curry #'every #'event-equal))
-  (ensure-same leaves expected-leaves :test (curry #'every #'event-equal)))
+   EXPECTED-LEAVES."
+  (is (every #'event-equal expected-joins  joins))
+  (is (every #'event-equal expected-leaves leaves)))
 
-(deftestsuite connection-root (root)
-  ()
-  (:documentation
-   "Units test for the `connection' class and `connect' method."))
+(def-suite :network.spread.connection
+  :in :network.spread
+  :description
+  "Units test for the `connection' class and `connect' method.")
+(in-suite :network.spread.connection)
 
-(addtest (connection-root
-          :documentation
-          "Smoke test for the `connect' method.")
-  connect/smoke
+(test connect/smoke
+  "Smoke test for the `connect' method."
 
   ;; Connect and disconnect. Disconnecting twice has to signal an
   ;; error.
-  (let ((connection (connect daemon)))
+  (let ((connection (connect *daemon*)))
     (unwind-protect
          (progn
-           (ensure      connection)
-           (ensure      (stringp (connection-name connection)))
-           (ensure-null (connection-groups connection)))
+           (is-true connection)
+           (is (stringp (connection-name connection)))
+           (is (null (connection-groups connection))))
       (disconnect connection))
 
-    (ensure-condition 'spread-client-error
+    (signals spread-error
       (disconnect connection)))
 
   ;; Illegal spread name.
-  (ensure-condition 'spread-client-error
+  (signals spread-client-error
     (connect "no-such-daemon"))
 
   ;; Not cool enough to use that port.
-  (ensure-condition 'spread-client-error
+  (signals spread-client-error
     (connect "31337")))
 
-(addtest (connection-root
-          :documentation
-          "Make sure restarts are established correctly during
-`connect' call.")
-  connect-restart
+(test connect-restart
+  "Make sure restarts are established correctly during `connect'
+   call."
 
   (handler-bind
-      ((spread-client-error
-        (lambda (condition)
-            (ensure (find-restart 'retry))
-            (ensure (find-restart 'use-daemon))
-            (invoke-restart (find-restart 'use-daemon) daemon))))
+      ((spread-client-error (lambda (condition)
+                              (declare (ignore condition))
+                              (is-true (find-restart 'retry))
+                              (is-true (find-restart 'use-daemon))
+                              (invoke-restart (find-restart 'use-daemon) *daemon*))))
     (connect "no-such-daemon")))
 
-(addtest (connection-root
-          :documentation
-          "Smoke test for group membership functions.")
-  membership/smoke
+(test membership/smoke
+  "Smoke test for group membership functions."
 
-  (with-connection (connection daemon)
+  (with-connection (connection *daemon*)
     (check-groups connection '()
      "Initially")
 
@@ -109,35 +103,31 @@ EXPECTED-LEAVES."
     (check-groups connection '()
      "After leaving all groups")))
 
-(addtest (connection-root
-          :documentation
-          "Tests for group membership-related conditions.")
-  membership-conditions
+(test membership-conditions
+  "Tests for group membership-related conditions."
 
-  (with-connection (connection daemon)
-    (ensure-condition 'group-too-long-error
+  (with-connection (connection *daemon*)
+    (signals group-too-long-error
       (join connection (make-string (* 2 +max-group-name+)
                                     :initial-element #\a)))
 
-    (ensure-condition 'group-too-long-error
+    (signals group-too-long-error
       (leave connection (make-string (* 2 +max-group-name+)
                                      :initial-element #\a)))))
 
-(addtest (connection-root
-          :documentation
-          "Tests for membership hooks.")
-  membership-hooks
+(test membership-hooks
+  "Tests for membership hooks."
 
-  (with-connection (connection daemon)
+  (with-connection (connection *daemon*)
     (let ((self-name  (connection-name connection))
           (joins      '())
           (leaves     '()))
       (hooks:add-to-hook (hooks:object-hook connection 'join-hook)
-                         #'(lambda (group members)
-                             (push `(,group ,members) joins)))
+                         (lambda (group members)
+                           (push `(,group ,members) joins)))
       (hooks:add-to-hook (hooks:object-hook connection 'leave-hook)
-                         #'(lambda (group members)
-                             (push `(,group ,members) leaves)))
+                         (lambda (group members)
+                           (push `(,group ,members) leaves)))
 
       (join connection "foo")
       (drain-messages connection)
@@ -150,7 +140,7 @@ EXPECTED-LEAVES."
                                        ("foo" (,self-name)))
                               leaves '())
 
-      (with-connection (other daemon)
+      (with-connection (other *daemon*)
         (let ((other-name (connection-name other)))
           (join other "foo")
           (drain-messages connection)
@@ -183,28 +173,23 @@ EXPECTED-LEAVES."
                                            ("foo" (,self-name)))
                                   leaves `(("bar" (,self-name)))))))))
 
-(addtest (connection-root
-          :documentation
-          "Smoke test for sending data.")
-  send/smoke
+(test send/smoke
+  "Smoke test for sending data."
 
-  (with-connection (sender daemon)
-    (ensure-cases (destination data)
-        '(("foo"                "foo") ; Single destination
-          (("group1")           "bar") ; Single destination, dispatched to broadcast method
-          (#("group1" "group2") "bar") ; Multiple destinations as vector
-          )
+  (with-connection (sender *daemon*)
+    (mapc (lambda+ ((destination data))
+            (send sender destination data))
+          '(("foo"                "foo") ; Single destination
+            (("group1")           "bar") ; Single destination, dispatched to broadcast method
+            (#("group1" "group2") "bar") ; Multiple destinations as vector
+            ))))
 
-      (send sender destination data))))
+(test send/failure
+  "Test error handling in case of failed send operations."
 
-(addtest (connection-root
-          :documentation
-          "Test error handling in case of failed send operations.")
-  send/failure
-
-  (let ((connection (connect daemon)))
+  (let ((connection (connect *daemon*)))
     ;; Too long group name should signal `group-too-long-error'.
-    (ensure-condition 'group-too-long-error
+    (signals group-too-long-error
       (send connection
             (make-string (* 2 +maximum-group-name-length+)
                          :initial-element #\a)
@@ -213,163 +198,131 @@ EXPECTED-LEAVES."
     (disconnect connection)
 
     ;; Single destination.
-    (ensure-condition 'spread-client-error
+    (signals spread-client-error
       (send connection "does-not-matter" "foo"))
 
     ;; Multiple destinations.
-    (ensure-condition 'spread-client-error
+    (signals spread-client-error
       (send connection '("foo" "bar") "foo"))))
 
-(addtest (connection-root
-          :documentation
-          "Make sure that messages of the maximum allowable size can
-be send but larger messages signal an error.")
-  send/message-size-limit
+(test send/message-size-limit
+  "Make sure that messages of the maximum allowable size can be send
+   but larger messages signal an error."
 
   (flet ((make-message (size)
            (make-string size :initial-element #\a)))
-    (with-connection (sender daemon)
-      (with-connection (receiver daemon)
+    (with-connection (sender *daemon*)
+      (with-connection (receiver *daemon*)
         (with-group (receiver "message-size-limit")
           ;; Longest possible message => has to work.
           (send sender "message-size-limit"
                 (make-message +maximum-message-data-length+))
-          (ensure-same (length (receive receiver))
-                       +maximum-message-data-length+
-                       :test #'=)
+          (is (= +maximum-message-data-length+
+                 (length (receive receiver))))
 
           ;; Longer message => has to signal an error.
-          (ensure-condition 'message-too-long
+          (signals message-too-long
             (send sender "message-size-limit"
                   (make-message (1+ +maximum-message-data-length+)))))))))
 
-(addtest (connection-root
-          :documentation
-          "Test error handling in case of failed receive operations.")
-  receive/failure
+(test receive/failure
+  "Test error handling in case of failed receive operations."
 
-  (let ((connection (connect daemon)))
+  (let ((connection (connect *daemon*)))
     (disconnect connection)
+    (signals spread-client-error (receive connection))))
 
-    (ensure-condition 'spread-client-error (receive connection))))
+(defmacro with-receive-test-case-context ((&key (group "group")) &body body)
+  (once-only (group)
+    `(mapc (lambda+ ((expected-message sender? expected-group))
+             (with-connection (sender *daemon*)
+               (let ((sender-name (connection-name sender)))
+                 (with-connection (receiver *daemon*)
+                   (with-group (receiver ,group)
+                     ,@body)))))
+           `((,(octet-vector 98 97 114) t   ,,group)
+             (,(octet-vector 98 97 114) nil ,,group)
+             (,(octet-vector 98 97 114) t   nil)
+             (,(octet-vector 98 97 114) nil nil)))))
 
-(macrolet
-    ((with-receive-test-case-context ((&key (group "group")) &body body)
-       (once-only (group)
-         (let ((empty   '(octet-vector))
-               (message '(octet-vector 98 97 114)))
-           `(ensure-cases ((message expected-message
-                            sender? expected-sender?
-                            group?  expected-group))
-                `((""    ,,empty   t                t   nil              nil)
-                  (""    ,,empty   :when-membership nil nil              nil)
-                  (""    ,,empty   nil              nil nil              nil)
-                  (""    ,,empty   nil              nil t                ,,group)
-                  (""    ,,empty   nil              nil :when-membership nil)
-                  (""    ,,empty   nil              nil nil              nil)
+(test send-receive/smoke
+  "Smoke test for sending and receiving data."
 
-                  ("bar" ,,message t                t   nil              nil)
-                  ("bar" ,,message :when-membership nil nil              nil)
-                  ("bar" ,,message nil              nil nil              nil)
-                  ("bar" ,,message nil              nil t                ,,group)
-                  ("bar" ,,message nil              nil :when-membership nil)
-                  ("bar" ,,message nil              nil nil              nil))
+  (with-receive-test-case-context (:group "group")
+    ;; The receiver should not get this message.
+    (send sender "some-other-group" "foo")
 
-              (with-connection (sender daemon)
-                (let ((sender-name (connection-name sender)))
-                  (with-connection (receiver daemon)
-                    (with-group (receiver ,group)
-                      ,@body)))))))))
+    ;; But this one
+    (send sender "group" "bar")
+    (is (equalp (multiple-value-list
+                 (receive receiver
+                          :block?         t
+                          :return-groups? (when expected-group t)
+                          :return-sender? sender?))
+                (list expected-message
+                      (when sender?
+                        sender-name)
+                      (when expected-group
+                        (list expected-group)))))
 
+    ;; Non-blocking receive should just return.
+    (finishes (receive receiver
+                       :block?         nil
+                       :return-groups? (when expected-group t)
+                       :return-sender? sender?))))
 
-  (addtest (connection-root
-            :documentation
-            "Smoke test for sending and receiving data.")
-    send-receive/smoke
+(test send-receive-into/smoke
+  "Smoke test for sending and receiving data into a buffer."
 
-    (with-receive-test-case-context (:group "group")
-      ;; The receiver should not get this message.
-      (send sender "some-other-group" "foo")
+  (with-receive-test-case-context (:group "group")
+    ;; The receiver should not get this message.
+    (send sender "some-other-group" "foo")
 
-      ;; But this one
-      (send sender "group" message)
-      (ensure-same (receive receiver
-                            :block?         t
-                            :return-groups? group?
-                            :return-sender? sender?)
-                   (values expected-message
-                           (when expected-sender?
-                             sender-name)
-                           (when expected-group
-                             (list expected-group)))
-                   :test #'equalp)
+    (let ((buffer (make-octet-vector 100)))
+      ;; But this one.
+      (send sender "group" "bar")
+      (is (equalp (multiple-value-list
+                   (receive-into receiver buffer
+                                 :block?         t
+                                 :return-groups? (when expected-group t)
+                                 :return-sender? sender?))
+                  (list (length expected-message)
+                        (when sender?
+                          sender-name)
+                        (when expected-group
+                          (list expected-group)))))
+
+      ;; Buffer too small => spread-client-error: buffer-too-short
+      ;;
+      ;; This cannot be tested due to a bug in the Spread client
+      ;; library.
+      #+spread-fixed (send sender "group" "bar")
+      #+spread-fixed (signals spread-client-error
+                       (receive-into receiver (make-octet-vector 2)
+                                     :block?         t
+                                     :return-groups? (when expected-group t)
+                                     :return-sender? sender?))
 
       ;; Non-blocking receive should just return.
-      (receive receiver
-               :block?         nil
-               :return-groups? group?
-               :return-sender? sender?)))
+      (finishes (receive-into receiver buffer
+                              :block?         nil
+                              :return-groups? (when expected-group t)
+                              :return-sender? sender?)))))
 
-  (addtest (connection-root
-            :documentation
-            "Smoke test for sending and receiving data into a buffer.")
-    send-receive-into/smoke
+(test self-discard
+  "Test that `connection' instances do not receive messages sent by
+   themselves."
 
-    (with-receive-test-case-context (:group "group")
-      ;; The receiver should not get this message.
-      (send sender "some-other-group" "foo")
-
-      (let ((buffer (make-octet-vector 100)))
-        ;; But this one.
-        (send sender "group" message)
-        (ensure-same (receive-into receiver buffer
-                                   :block?         t
-                                   :return-groups? group?
-                                   :return-sender? sender?)
-                     (values (length expected-message)
-                             (when expected-sender?
-                               sender-name)
-                             (when expected-group
-                               (list expected-group)))
-                     :test #'equalp)
-
-        ;; Buffer too small => spread-client-error: buffer-too-short
-        ;;
-        ;; This cannot be tested due to a bug in the Spread client
-        ;; library.
-        #+spread-fixed (send sender "group" message)
-        #+spread-fixed (when (> (length message) 2)
-                         (ensure-condition 'spread-client-error
-                           (receive-into receiver (make-octet-vector 2)
-                                         :block?         t
-                                         :return-groups? group?
-                                         :return-sender? sender?)))
-
-        ;; Non-blocking receive should just return.
-        (receive-into receiver buffer
-                      :block?         nil
-                      :return-groups? group?
-                      :return-sender? sender?)))))
-
-(addtest (connection-root
-          :documentation
-          "Test that `connection' instances do not receive messages
-           sent by themselves.")
-  self-discard
-
-  (with-connection (connection daemon)
+  (with-connection (connection *daemon*)
     (with-group (connection "group")
       (send connection "group" "foo")
       (loop :repeat 10 :do
-         (ensure-null (receive connection :block? nil))
+         (is (null (receive connection :block? nil)))
          (sleep .1)))))
 
-(addtest (connection-root
-          :documentation
-          "Test the `print-object' method on `connection'.")
-  print
+(test print
+  "Test the `print-object' method on `connection'."
 
-  (with-connection (connection daemon)
-    (ensure (not (emptyp
-                  (with-output-to-string (stream)
-                    (format stream "~A" connection)))))))
+  (with-connection (connection *daemon*)
+    (is-false (emptyp (with-output-to-string (stream)
+                        (format stream "~A" connection))))))

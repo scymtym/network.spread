@@ -6,42 +6,27 @@
 
 (cl:in-package #:network.spread.test)
 
-(deftestsuite macros-root (root)
-  ()
-  (:documentation
-   "Unit test for the convenience macros provided by the
-network.spread system."))
+(def-suite :network.spread.macros
+  :in :network.spread
+  :description
+  "Unit test for the convenience macros provided by the network.spread
+   system.")
+(in-suite :network.spread.macros)
 
-(deftestsuite with-connection-root (macros-root)
-  ()
-  (:documentation
-   "Unit tests for the `with-connection' macro."))
+(test with-connection/smoke
+  "Smoke test for the `with-connection' macro."
 
-(addtest (with-connection-root
-          :documentation
-          "Smoke test for the `with-connection' macro.")
-  smoke
+  (with-connection (connection *daemon*)
+    (is-true connection)))
 
-  (with-connection (connection daemon)
-    (ensure connection)))
-
-(deftestsuite with-group-root (macros-root)
-  ()
-  (:documentation
-   "Unit tests for the `with-group' macro."))
-
-(addtest (with-group-root
-          :documentation
-          "Smoke test for the `with-group' macro.")
-  smoke
+(test with-group/smoke
+  "Smoke test for the `with-group' macro."
 
   (flet ((do-it (wait?)
-           (with-connection (connection daemon)
+           (with-connection (connection *daemon*)
              (with-group (connection "foo" :wait? wait?)
-               (ensure-same
-                (connection-groups connection) '("foo")
-                :test #'equal))
+               (is (equal '("foo") (connection-groups connection))))
 
-             (ensure-null (connection-groups connection)))))
+             (is (emptyp (connection-groups connection))))))
     (do-it t)
     (do-it nil)))

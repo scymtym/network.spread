@@ -109,7 +109,7 @@ spread group communication system."
   :description "This system provides unit tests for the network.spread system."
   :depends-on  ((:version :network.spread #.(version/string))
 
-                (:version :lift           "1.7.1"))
+                (:version :fiveam         "1.3"))
   :components  ((:module     "test"
                  :serial     t
                  :components ((:file       "package")
@@ -117,11 +117,12 @@ spread group communication system."
                               (:file       "macros")
                               (:file       "daemon")))))
 
-(defmethod perform ((op test-op) (system (eql (find-system :network.spread-test))))
+(defmethod perform ((op     test-op)
+                    (system (eql (find-system :network.spread-test))))
   (eval (read-from-string
-         "(NETWORK.SPREAD:WITH-DAEMON
-              (:PORT NETWORK.SPREAD-SYSTEM:*TEST-PORT*)
-            (LIFT:RUN-TESTS :CONFIG :GENERIC))")))
+         "(network.spread:with-daemon
+              (:port network.spread-system:*test-port*)
+            (network.spread.test:run-tests))")))
 
 ;;; Configuration stuff
 
