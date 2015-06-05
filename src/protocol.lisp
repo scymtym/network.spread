@@ -1,6 +1,6 @@
 ;;;; protocol.lisp --- Protocol of the Common Lisp spread bindings.
 ;;;;
-;;;; Copyright (C) 2011, 2012, 2013 Jan Moringen
+;;;; Copyright (C) 2011, 2012, 2013, 2015 Jan Moringen
 ;;;;
 ;;;; Author: Jan Moringen <jmoringe@techfak.uni-bielefeld.de>
 
@@ -8,7 +8,10 @@
 
 (defgeneric connect (daemon)
   (:documentation
-   "Connect to the spread daemon designated by DAEMON."))
+   "Connect to the Spread daemon designated by DAEMON.
+
+    If the connection attempt succeeds, a `connection' instance is
+    returned."))
 
 (defgeneric disconnect (connection)
   (:documentation

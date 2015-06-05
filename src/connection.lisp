@@ -219,8 +219,6 @@ at groups, but not for sending messages to groups."))
 ;;; Constructing a connection
 
 (defmethod connect ((daemon string))
-  "Connect to the spread segment designated by DAEMON. If the
-connection attempt succeeds, a `connection' instance is returned. "
   (let+ (((&values handle name) (%connect daemon :membership? t)))
     (make-instance 'connection
                    :handle      handle
@@ -228,27 +226,23 @@ connection attempt succeeds, a `connection' instance is returned. "
                    :name        name)))
 
 (defmethod connect :around ((daemon string))
-  "Install restarts around the connection attempt."
-  (let (result)
-    (tagbody
-     retry
-       (restart-case
-           (setf result (call-next-method daemon))
-         (retry ()
-           :report (lambda (stream)
-                     (format stream "~@<Retry connecting to the Spread ~
-                                     segment designated by ~S~@:>"
-                             daemon))
-           (go retry))
-         (use-daemon (new-daemon)
-           :interactive (lambda ()
-                          (format *query-io* "Specify daemon: ")
-                          (force-output *query-io*)
-                          (list (read-line *query-io*)))
-           :report (lambda (stream)
-                     (format stream "~@<Retry connecting to the Spread ~
-                                     segment with a different daemon ~
-                                     designator.~@:>"))
-           (setf daemon new-daemon)
-           (go retry))))
-    result))
+  ;; Install restarts around the connection attempt.
+  (loop (restart-case
+            (return-from connect (call-next-method daemon))
+          (retry ()
+            :report (lambda (stream)
+                      (format stream "~@<Retry connecting to the ~
+                                      Spread segment designated by ~
+                                      ~S~@:>"
+                              daemon)))
+          (use-daemon (new-daemon)
+            :interactive (lambda ()
+                           (format *query-io* "Specify daemon: ")
+                           (force-output *query-io*)
+                           (list (read-line *query-io*)))
+            :report (lambda (stream)
+                      (format stream "~@<Retry connecting to the ~
+                                      Spread segment with a ~
+                                      different daemon ~
+                                      designator.~@:>"))
+            (setf daemon new-daemon)))))
