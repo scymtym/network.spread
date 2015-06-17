@@ -52,12 +52,7 @@ sent.
 START and END can be used to specify a subsequence of BUFFER into
 which data should be received.
 
-If BLOCK? is non-nil the call blocks until a message has been
-received. Otherwise, the call returns immediately and may return nil
-if no message has been received.
-
-RETURN-SENDER? and RETURN-GROUPS? control whether the sender and/or
-group names should be extracted from the received message."))
+"))
 
 (defgeneric receive (connection
                      &key
@@ -70,9 +65,24 @@ CONNECTION is a member. Return three values: 1. an
 of the sender of the received message 3. a list of names of the groups
 to which the received message has been sent.
 
-If BLOCK? is non-nil the call blocks until a message has been
+"))
+
+(define-constant +receive*-shared-documentation+
+    "If BLOCK? is non-nil the call blocks until a message has been
 received. Otherwise, the call returns immediately and may return nil
 if no message has been received.
 
 RETURN-SENDER? and RETURN-GROUPS? control whether the sender and/or
-group names should be extracted from the received message."))
+group names should be extracted from the received message. For both
+parameters, valid values are of type `return-aspect-switch', i.e.:
+* nil              Never return sender/groups.
+* t                Always return sender/groups.
+* :when-membership Return sender/groups for membership messages but
+                   not for regular messages."
+  :test #'string=)
+
+(dolist (function '(receive-into receive))
+  (let ((current (documentation function 'function)))
+   (unless (ends-with-subseq +receive*-shared-documentation+ current)
+     (setf (documentation function 'function)
+           (concatenate 'string current +receive*-shared-documentation+)))))

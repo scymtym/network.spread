@@ -256,16 +256,30 @@ be send but larger messages signal an error.")
 (macrolet
     ((with-receive-test-case-context ((&key (group "group")) &body body)
        (once-only (group)
-         `(ensure-cases ((expected-message sender? expected-group))
-              `((,(octet-vector 98 97 114) t   ,,group)
-                (,(octet-vector 98 97 114) nil ,,group)
-                (,(octet-vector 98 97 114) t   nil))
+         (let ((empty   '(octet-vector))
+               (message '(octet-vector 98 97 114)))
+           `(ensure-cases ((message expected-message
+                            sender? expected-sender?
+                            group?  expected-group))
+                `((""    ,,empty   t                t   nil              nil)
+                  (""    ,,empty   :when-membership nil nil              nil)
+                  (""    ,,empty   nil              nil nil              nil)
+                  (""    ,,empty   nil              nil t                ,,group)
+                  (""    ,,empty   nil              nil :when-membership nil)
+                  (""    ,,empty   nil              nil nil              nil)
 
-            (with-connection (sender daemon)
-              (let ((sender-name (connection-name sender)))
-                (with-connection (receiver daemon)
-                  (with-group (receiver ,group)
-                    ,@body))))))))
+                  ("bar" ,,message t                t   nil              nil)
+                  ("bar" ,,message :when-membership nil nil              nil)
+                  ("bar" ,,message nil              nil nil              nil)
+                  ("bar" ,,message nil              nil t                ,,group)
+                  ("bar" ,,message nil              nil :when-membership nil)
+                  ("bar" ,,message nil              nil nil              nil))
+
+              (with-connection (sender daemon)
+                (let ((sender-name (connection-name sender)))
+                  (with-connection (receiver daemon)
+                    (with-group (receiver ,group)
+                      ,@body)))))))))
 
 
   (addtest (connection-root
@@ -278,22 +292,23 @@ be send but larger messages signal an error.")
       (send sender "some-other-group" "foo")
 
       ;; But this one
-      (send sender "group" "bar")
+      (send sender "group" message)
       (ensure-same (receive receiver
                             :block?         t
-                            :return-groups? (when expected-group t)
+                            :return-groups? group?
                             :return-sender? sender?)
                    (values expected-message
-                           (when sender?
+                           (when expected-sender?
                              sender-name)
                            (when expected-group
                              (list expected-group)))
                    :test #'equalp)
 
       ;; Non-blocking receive should just return.
-      (receive receiver :block?         nil
-                        :return-groups? (when expected-group t)
-                        :return-sender? sender?)))
+      (receive receiver
+               :block?         nil
+               :return-groups? group?
+               :return-sender? sender?)))
 
   (addtest (connection-root
             :documentation
@@ -306,30 +321,31 @@ be send but larger messages signal an error.")
 
       (let ((buffer (make-octet-vector 100)))
         ;; But this one.
-        (send sender "group" "bar")
+        (send sender "group" message)
         (ensure-same (receive-into receiver buffer
                                    :block?         t
-                                   :return-groups? (when expected-group t)
+                                   :return-groups? group?
                                    :return-sender? sender?)
                      (values (length expected-message)
-                             (when sender?
+                             (when expected-sender?
                                sender-name)
                              (when expected-group
                                (list expected-group)))
                      :test #'equalp)
 
         ;; Buffer too small => spread-client-error: buffer-too-short
-        (send sender "group" "bar")
-        (ensure-condition 'spread-client-error
-          (receive-into receiver (make-octet-vector 2)
-                        :block?         t
-                        :return-groups? (when expected-group t)
-                        :return-sender? sender?))
+        (send sender "group" message)
+        (when (> (length message) 2)
+          (ensure-condition 'spread-client-error
+            (receive-into receiver (make-octet-vector 2)
+                          :block?         t
+                          :return-groups? group?
+                          :return-sender? sender?)))
 
         ;; Non-blocking receive should just return.
         (receive-into receiver buffer
                       :block?         nil
-                      :return-groups? (when expected-group t)
+                      :return-groups? group?
                       :return-sender? sender?)))))
 
 (addtest (connection-root

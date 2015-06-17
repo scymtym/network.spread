@@ -1,6 +1,6 @@
 ;;;; types.lisp --- Types for the network.spread system.
 ;;;;
-;;;; Copyright (C) 2011, 2012, 2013 Jan Moringen
+;;;; Copyright (C) 2011, 2012, 2013, 2015 Jan Moringen
 ;;;;
 ;;;; Author: Jan Moringen <jmoringe@techfak.uni-bielefeld.de>
 
@@ -9,3 +9,6 @@
 (deftype membership-event ()
   "The keywords which designate membership events."
   '(member :join :leave :other))
+
+(deftype return-aspect-switch ()
+  '(or boolean (eql :when-membership)))

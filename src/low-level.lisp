@@ -28,6 +28,13 @@
   (defmacro service-type-matches? (service-type &rest values)
     `(%service-type-matches?  (cffi:mem-ref ,service-type :int) ,@values))
 
+  (defmacro return-value-matches? (return-value &rest values)
+    (once-only (return-value)
+      `(or ,@(mapcar (lambda (value)
+                       `(= ,return-value ,(cffi:foreign-enum-value
+                                           'return-value value)))
+                     values))))
+
 ) ; eval-when
 
 ;;; Convenience wrappers
@@ -142,7 +149,8 @@
 
 (declaim (ftype (function (fixnum
                            simple-octet-vector non-negative-fixnum non-negative-fixnum
-                           boolean boolean))
+                           return-aspect-switch return-aspect-switch)
+                          (values &rest t))
                 %receive-into))
 
 (defun %receive-into (handle buffer start end return-sender? return-groups?)
@@ -164,26 +172,37 @@
                                    max-groups num-groups groups-ptr
                                    message-type endian-mismatch
                                    buffer-size buffer-ptr))
-                 (receive/error (max-groups)
+                 (receive/with-data (max-groups)
                    (let* ((buffer-ptr  (cffi:inc-pointer buffer-ptr start))
                           (buffer-size (- end start))
                           (result      (receive max-groups buffer-ptr buffer-size)))
                      (when (minusp result)
                        (%signal-error "Error receiving" result))
                      result))
+                 (receive/probe ()
+                   (set-service-type service-type) ; detect too short buffers
+                   (let ((result (receive 0 buffer-ptr 0)))
+                     (cond
+                       ((return-value-matches?
+                         result :buffer-too-short :groups-too-short)
+                        t)
+                       ((minusp result)
+                        (%signal-error "Error receiving" result)))))
                  (return/full (type size)
                    (values (or type (%extract-type service-type)) size
                            (when return-sender?
                              (%extract-sender sender))
                            (when return-groups?
                              (%extract-groups num-groups groups)))))
-          (declare (dynamic-extent #'receive #'receive/error
-                                   #'return-membership/full))
+          (declare (dynamic-extent #'receive #'receive/with-data #'receive/probe
+                                   #'return/full))
 
           (cond
+            ;; Returning send and/or group list has definitely not
+            ;; been requested.
             ((not (or return-sender? return-groups?))
              (set-service-type service-type :drop-recv)
-             (let ((result (receive/error 0)))
+             (let ((result (receive/with-data 0)))
                (declare (type fixnum result))
                (cond
                  ;; Service type indicates regular message => return
@@ -195,9 +214,36 @@
                  (t
                   (values (%extract-type service-type) nil)))))
 
+            ;; At least one of sender and group list should be
+            ;; returned iff the message is a membership message.
+            ((not (or (eq return-sender? t) (eq return-groups? t)))
+             (cond
+               ;; When probing receive does not detect too short data
+               ;; or group buffer, this has to be a membership message
+               ;; with empty group list.
+               ;;
+               ;; Note that this relies on Spread returning
+               ;; :buffer-too-short when buffer size and payload size
+               ;; are both 0.
+               ((not (receive/probe))
+                (return/full nil nil))
+               ;; Service type indicates regular message => receive
+               ;; and return regular message.
+               ((service-type-matches? service-type :regular-mess)
+                (set-service-type service-type :drop-recv)
+                (let ((result (receive/with-data 0)))
+                  (values :regular result)))
+               ;; Service type does not indicate regular message =>
+               ;; receive and return membership message.
+               (t
+                (receive/with-data +max-groups+)
+                (return/full nil nil))))
+
+            ;; Both, sender and group list, should definitely be
+            ;; received returned.
             (t
              (set-service-type service-type)
-             (let ((result (receive/error +max-groups+)))
+             (let ((result (receive/with-data +max-groups+)))
                (declare (type fixnum result))
                (cond
                  ;; Service type indicates regular message => return
