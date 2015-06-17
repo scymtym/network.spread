@@ -6,14 +6,31 @@
 
 (cl:in-package #:network.spread)
 
-;;; Convenience wrappers
+;;; Utilities
 
-(defmacro with-pointers-to-vector-data (bindings &body body)
-  `(cffi:with-pointer-to-vector-data ,(first bindings)
-     ,@(if (rest bindings)
-           `((with-pointers-to-vector-data ,(rest bindings)
-               ,@body))
-           body)))
+(eval-when (:compile-toplevel :load-toplevel :execute)
+
+  (defmacro with-pointers-to-vector-data (bindings &body body)
+    `(cffi:with-pointer-to-vector-data ,(first bindings)
+       ,@(if (rest bindings)
+             `((with-pointers-to-vector-data ,(rest bindings)
+                 ,@body))
+             body)))
+
+  (defmacro set-service-type (service-type &rest values)
+    (let ((mask (cffi:foreign-bitfield-value 'service-type values)))
+      `(setf (cffi:mem-ref ,service-type :int) ,mask)))
+
+  (defmacro %service-type-matches? (service-type &rest values)
+    (let ((mask (cffi:foreign-bitfield-value 'service-type values)))
+      `(plusp (logand ,service-type ,mask))))
+
+  (defmacro service-type-matches? (service-type &rest values)
+    `(%service-type-matches?  (cffi:mem-ref ,service-type :int) ,@values))
+
+) ; eval-when
+
+;;; Convenience wrappers
 
 ;;; The following functions are not performance-critical.
 ;;;
@@ -22,27 +39,23 @@
 
 (defun %connect (daemon
                  &key
-                   ;; name
-                   ;; priority?
-                   membership?)
-  (cffi:with-foreign-objects ((handle '(:pointer :int)))
-    (cffi:with-foreign-string (private-group (make-string +max-group-name+))
-      (let ((result (spread-connect
-                     daemon
-                     (cffi:null-pointer) ;;(if name (cffi:
-                     0 ;; (if priority 1 0)
-                     (if membership? 1 0)
-                     handle
-                     private-group)))
-        (case result
-          (:accept-session
-           (values
-            (cffi:mem-ref handle :int)
-            (cffi:convert-from-foreign private-group :string)))
-          (t
-           (error 'connect-failed
-                  :name daemon
-                  :code result)))))))
+                 ;; name
+                 priority?
+                 membership?)
+  (declare (type string daemon))
+  (cffi:with-foreign-objects ((handle        :int)
+                              (private-group :char +max-group-name+))
+    (let ((result (spread-connect daemon (cffi:null-pointer)  ;;(if name (cffi:
+                                  (if priority? 1 0) (if membership? 1 0)
+                                  handle private-group)))
+      (case result
+        (:accept-session
+         (values (cffi:mem-ref handle :int)
+                 (cffi:convert-from-foreign private-group :string)))
+        (t
+         (error 'connect-failed
+                :name daemon
+                :code result))))))
 
 (defun %disconnect (handle)
   (let ((result (spread-disconnect handle)))
@@ -67,47 +80,46 @@
 ;;; Consequently, some of them are inlined and cffi's automatic
 ;;; translation of return values, enum values, etc. is mostly avoided.
 
-(declaim (ftype (function (fixnum) (or null fixnum)) %poll)
+(declaim (ftype (function (fixnum) (values (or null fixnum) &optional)) %poll)
          (inline %poll))
 
 (defun %poll (handle)
+  (declare (optimize (speed 3) (debug 0) (safety 0)))
   (let ((result (spread-poll handle)))
+    (declare (type fixnum result))
     (cond
       ((plusp result) result)
       ((zerop result) nil)
       (t              (%signal-error "Error polling" result)))))
 
-(declaim (ftype (function (t) (values membership-event &rest nil)) %extract-type)
+(declaim (ftype (function (t) (values membership-event &optional)) %extract-type)
          (inline %extract-type))
 
 (defun %extract-type (service-type)
   (declare (optimize (speed 3) (debug 0) (safety 0)))
-  (let ((type (cffi:mem-ref service-type 'service-type)))
+  (let ((type (cffi:mem-ref service-type :int)))
     (cond
-      ((member :caused-by-join type)            :join)
-      ((or (member :caused-by-leave type)
-           (member :caused-by-disconnect type)) :leave)
-      (t                                        :other))))
+      ((%service-type-matches? type :caused-by-join)
+       :join)
+      ((%service-type-matches? type :caused-by-leave :caused-by-disconnect)
+       :leave)
+      (t
+       :other))))
 
-(declaim (ftype (function (simple-octet-vector) (values string &rest nil)) %extract-sender)
+(declaim (ftype (function (octet-vector) (values string &optional)) %extract-sender)
          (inline %extract-sender))
 
 (defun %extract-sender (sender)
   (declare (optimize (speed 3) (debug 0) (safety 0)))
-  #+sbcl
-  (sb-ext:octets-to-string
-   sender :external-format :ascii
-   :end (or (position 0 sender) (length sender)))
-  #-sbcl
-  (cffi:foreign-string-to-lisp
-   sender
-   :encoding  :ascii
-   :max-chars (or (position 0 sender) (length sender))))
+  #+sbcl (sb-ext:octets-to-string sender
+                                  :external-format :ascii
+                                  :end             (or (position 0 sender)
+                                                       +max-group-name+))
+  #-sbcl (error "not implemented"))
 
 (declaim (ftype (function (t octet-vector)
                           (values (or list (eql :group-buffer-too-small))))
-                %extract-groups)
-         (inline %extract-groups))
+                %extract-groups))
 
 (defun %extract-groups (num-groups groups)
   (declare (optimize (speed 3) (debug 0) (safety 0)))
@@ -118,119 +130,84 @@
 
     (loop :repeat num-groups
        :for offset :of-type fixnum :from 0 :by +max-group-name+
-       :collect
-       #+sbcl
-       (sb-ext:octets-to-string
-        groups :external-format :ascii
-        :start offset
-        :end   (or (position 0 groups
-                             :start offset
-                             :end   (+ offset +max-group-name+))
-                   (+ offset +max-group-name+)))
-       #-sbcl
-       (cffi:foreign-string-to-lisp groups
-                                    :encoding  :ascii
-                                    :offset    offset
-                                    :max-chars +max-group-name+))))
+       :collect (let* ((end (+ offset +max-group-name+))
+                       (end (or (position 0 groups :start offset :end end)
+                                end)))
+                  #+sbcl (sb-ext:octets-to-string
+                          groups
+                          :external-format :ascii
+                          :start           offset
+                          :end             end))
+       #-sbcl (error "not implemented"))))
 
-(declaim (inline %%receive-into))
+(declaim (ftype (function (fixnum
+                           simple-octet-vector non-negative-fixnum non-negative-fixnum
+                           boolean boolean))
+                %receive-into))
 
-(defun %%receive-into (handle buffer start end)
+(defun %receive-into (handle buffer start end return-sender? return-groups?)
   (declare (optimize (speed 3) (safety 0) (debug 0))
            (type octet-vector buffer)
-           (type fixnum start end))
-  (let ((sender (cffi:make-shareable-byte-vector +max-group-name+)))
-    (declare (dynamic-extent sender))
-    (cffi:with-foreign-objects ((service-type    'service-type)
-                                (num-groups      :int)
-                                (message-type    :int16)
-                                (endian-mismatch :int))
-      (setf (cffi:mem-ref service-type :int)
-            #.(cffi:foreign-bitfield-value 'service-type '(:drop-recv)))
-      (let ((result
-             (with-pointers-to-vector-data ((sender-ptr sender)
-                                            (buffer-ptr buffer))
-               (spread-receive handle service-type
-                               sender-ptr
-                               0 num-groups (cffi:null-pointer)
-                               message-type endian-mismatch
-                               end (cffi:inc-pointer buffer-ptr start)))))
-        (declare (type fixnum result))
-        (cond
-          ;; Negative result => error.
-          ((minusp result)
-           (%signal-error "Error receiving" result))
-
-          ;; Positive result and service type indicates regular
-          ;; message => return regular message.
-          ((plusp (logand
-                   (cffi:mem-ref service-type :int)
-                   #.(cffi:foreign-bitfield-value 'service-type '(:regular-mess))))
-           (values :regular result))
-
-          ;; Positive result and service type does not indicate
-          ;; regular message => return membership message.
-          (t
-           (values (%extract-type service-type) nil)))))))
-
-(declaim (inline %%receive-into/sender+groups))
-
-(defun %%receive-into/sender+groups (handle buffer start end sender? groups?)
-  ;; SBCL won't do stack allocation otherwise
-  (declare (optimize (speed 3) (safety 0) (debug 0))
-           (type octet-vector buffer)
-           (type fixnum start end))
+           (type fixnum       start end))
   (let ((sender (cffi:make-shareable-byte-vector +max-group-name+))
-        (groups (cffi:make-shareable-byte-vector
-                 (* +max-groups+ +max-group-name+))))
+        (groups (cffi:make-shareable-byte-vector (* +max-groups+ +max-group-name+))))
     (declare (dynamic-extent sender groups))
     (cffi:with-foreign-objects ((service-type    'service-type)
                                 (num-groups      :int)
                                 (message-type    :int16)
                                 (endian-mismatch :int))
-      (setf (cffi:mem-ref service-type 'service-type) 0)
-      (let ((result
-             (with-pointers-to-vector-data ((sender-ptr sender)
-                                            (groups-ptr groups)
-                                            (buffer-ptr buffer))
-               (spread-receive handle service-type
-                               sender-ptr
-                               +max-groups+ num-groups groups-ptr
-                               message-type endian-mismatch
-                               end (cffi:inc-pointer buffer-ptr start)))))
-        (declare (type fixnum result))
-        (cond
-          ;; Negative result => error.
-          ((minusp result)
-           (%signal-error "Error receiving" result))
+      (with-pointers-to-vector-data
+          ((buffer-ptr buffer) (sender-ptr sender) (groups-ptr groups))
+        (labels ((receive (max-groups buffer-ptr buffer-size)
+                   (spread-receive handle service-type
+                                   sender-ptr
+                                   max-groups num-groups groups-ptr
+                                   message-type endian-mismatch
+                                   buffer-size buffer-ptr))
+                 (receive/error (max-groups)
+                   (let* ((buffer-ptr  (cffi:inc-pointer buffer-ptr start))
+                          (buffer-size (- end start))
+                          (result      (receive max-groups buffer-ptr buffer-size)))
+                     (when (minusp result)
+                       (%signal-error "Error receiving" result))
+                     result))
+                 (return/full (type size)
+                   (values (or type (%extract-type service-type)) size
+                           (when return-sender?
+                             (%extract-sender sender))
+                           (when return-groups?
+                             (%extract-groups num-groups groups)))))
+          (declare (dynamic-extent #'receive #'receive/error
+                                   #'return-membership/full))
 
-          ;; Positive result and service type indicates regular
-          ;; message => return regular message.
-          ((plusp (logand
-                   (cffi:mem-ref service-type :int)
-                   #.(cffi:foreign-bitfield-value 'service-type '(:regular-mess))))
-           (values :regular result
-                   (when sender? (%extract-sender sender))
-                   (when groups? (%extract-groups num-groups groups))))
+          (cond
+            ((not (or return-sender? return-groups?))
+             (set-service-type service-type :drop-recv)
+             (let ((result (receive/error 0)))
+               (declare (type fixnum result))
+               (cond
+                 ;; Service type indicates regular message => return
+                 ;; regular message.
+                 ((service-type-matches? service-type :regular-mess)
+                  (values :regular result))
+                 ;; Service type does not indicate regular message =>
+                 ;; return membership message.
+                 (t
+                  (values (%extract-type service-type) nil)))))
 
-          ;; Positive result and service type does not indicate
-          ;; regular message => return membership message.
-          (t
-           (values (%extract-type service-type) nil
-                   (when sender? (%extract-sender sender))
-                   (when groups? (%extract-groups num-groups groups)))))))))
-
-(declaim (ftype (function (integer octet-vector non-negative-fixnum non-negative-fixnum boolean boolean)
-                          (values &rest t))
-                %receive-into))
-
-(defun %receive-into (handle buffer start end return-sender? return-groups?)
-  (cond
-    ((not (or return-sender? return-groups?))
-     (%%receive-into handle buffer start end))
-    (t
-     (%%receive-into/sender+groups
-      handle buffer start end return-sender? return-groups?))))
+            (t
+             (set-service-type service-type)
+             (let ((result (receive/error +max-groups+)))
+               (declare (type fixnum result))
+               (cond
+                 ;; Service type indicates regular message => return
+                 ;; regular message.
+                 ((service-type-matches? service-type :regular-mess)
+                  (return/full :regular result))
+                 ;; Service type does not indicate regular message =>
+                 ;; return membership message.
+                 (t
+                  (return/full nil nil)))))))))))
 
 (declaim (ftype (function (fixnum simple-octet-vector simple-octet-vector) (values))
                 %send-one))
@@ -240,20 +217,19 @@
   (let ((length (length destination)))
     (when (< length +max-group-name+)
       (setf (aref destination length) 0)))
-  (cffi:with-pointer-to-vector-data (group-ptr destination)
-    (cffi:with-pointer-to-vector-data (message data)
-      (let ((result (spread-multicast handle
-                                      2 ; service-type
-                                      group-ptr
-                                      0 ; message-type
-                                      (length data) message)))
-        (declare (type fixnum result))
-        (cond
-          ((not (minusp result))
-           (values))
+  (with-pointers-to-vector-data ((group-ptr destination) (data-ptr data))
+    (let ((result (spread-multicast handle
+                                    2 ; service-type
+                                    group-ptr
+                                    0 ; message-type
+                                    (length data) data-ptr)))
+      (declare (type fixnum result))
+      (cond
+        ((not (minusp result))
+         (values))
 
-          (t
-           (%signal-error "Sending failed" result)))))))
+        (t
+         (%signal-error "Sending failed" result))))))
 
 (declaim (ftype (function (fixnum sequence simple-octet-vector) (values))
                 %send-multiple))
@@ -269,20 +245,19 @@
        (setf (subseq groups offset (+ offset length)) destination)
        (when (< length)
          (setf (aref groups (+ offset length)) 0)))
-    (cffi:with-pointer-to-vector-data (groups-ptr groups)
-      (cffi:with-pointer-to-vector-data (message data)
-        (let ((result (spread-multigroup-multicast handle
-                                                   2          ; service-type
-                                                   num-groups groups-ptr
-                                                   0          ; message-type
-                                                   (length data) message)))
-          (declare (type fixnum result))
-          (cond
-            ((not (minusp result))
-             (values))
+    (with-pointers-to-vector-data ((groups-ptr groups) (data-ptr data))
+      (let ((result (spread-multigroup-multicast handle
+                                                 2          ; service-type
+                                                 num-groups groups-ptr
+                                                 0          ; message-type
+                                                 (length data) data-ptr)))
+        (declare (type fixnum result))
+        (cond
+          ((not (minusp result))
+           (values))
 
-            (t
-             (%signal-error "Multigroup send failed" result))))))))
+          (t
+           (%signal-error "Multigroup send failed" result)))))))
 
 ;;; Utility functions
 
