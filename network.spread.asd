@@ -1,6 +1,6 @@
 ;;;; network.spread.asd --- System definition for the network.spread system.
 ;;;;
-;;;; Copyright (C) 2011, 2012, 2013, 2014, 2015 Jan Moringen
+;;;; Copyright (C) 2011-2016 Jan Moringen
 ;;;;
 ;;;; Author: Jan Moringen <jmoringe@techfak.uni-bielefeld.de>
 
@@ -68,7 +68,6 @@ See `version/list' for details on keyword parameters."
   :license     "LLGPLv3" ; see COPYING file for details.
   :description "This system provides a Common Lisp interface to the
 spread group communication system."
-  #+sbcl :defsystem-depends-on #+sbcl (:sb-posix)
   :depends-on  (:alexandria
                 :let-plus
                 :more-conditions
@@ -128,8 +127,7 @@ spread group communication system."
 
 (defun spread-library-pathname ()
   "Interpret hint as to where the Spread library can be found."
-  (or #+sbcl (sb-posix:getenv "SPREAD_LIBRARY")
-      nil))
+  (or (uiop:getenv "SPREAD_LIBRARY") nil))
 
 (defparameter *spread-library-pathname* (spread-library-pathname)
   "The pathname of the Spread library. nil or relative pathnames
@@ -137,18 +135,18 @@ indicate that the operating system's facilities should be used to
 locate the library.")
 
 (defparameter *default-port*
-  (or #+sbcl (let ((value (sb-posix:getenv "SPREAD_PORT")))
-               (when value (read-from-string value)))
+  (or (let ((value (uiop:getenv "SPREAD_PORT")))
+        (when value (read-from-string value)))
       4803)
   "The default port on which the Spread daemon should listen when it
 is started via `network.spread:start-daemon' or
 `network.spread:with-daemon'.")
 
 (defparameter *default-daemon-program*
-  (or #+sbcl (sb-posix:getenv "SPREAD_DAEMON_PROGRAM")
-      #+sbcl (let ((root (sb-posix:getenv "SPREAD_ROOT")))
-               (when root
-                 (format nil "~A/sbin/spread" root)))
+  (or (uiop:getenv "SPREAD_DAEMON_PROGRAM")
+      (let ((root (uiop:getenv "SPREAD_ROOT")))
+        (when root
+          (format nil "~A/sbin/spread" root)))
       "spread")
   "The default name of the program that should be executed when
 starting the Spread daemon.")
