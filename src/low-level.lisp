@@ -1,6 +1,6 @@
 ;;;; low-level.lisp --- Low-level (but not ffi) functions.
 ;;;;
-;;;; Copyright (C) 2011, 2012, 2013, 2015 Jan Moringen
+;;;; Copyright (C) 2011-2016 Jan Moringen
 ;;;;
 ;;;; Author: Jan Moringen <jmoringe@techfak.uni-bielefeld.de>
 
@@ -26,7 +26,7 @@
       `(plusp (logand ,service-type ,mask))))
 
   (defmacro service-type-matches? (service-type &rest values)
-    `(%service-type-matches?  (cffi:mem-ref ,service-type :int) ,@values))
+    `(%service-type-matches? (cffi:mem-ref ,service-type :int) ,@values))
 
   (defmacro return-value-matches? (return-value &rest values)
     (once-only (return-value)
@@ -198,7 +198,7 @@
                                    #'return/full))
 
           (cond
-            ;; Returning send and/or group list has definitely not
+            ;; Returning sender and/or group list has definitely not
             ;; been requested.
             ((not (or return-sender? return-groups?))
              (set-service-type service-type :drop-recv)
