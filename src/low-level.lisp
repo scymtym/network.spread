@@ -17,6 +17,10 @@
                  ,@body))
              body)))
 
+  (defmacro service-type (&rest values &environment env)
+    (assert (every (rcurry #'constantp env) values))
+    `(cffi:foreign-bitfield-value 'service-type '(,@values)))
+
   (defmacro set-service-type (service-type &rest values)
     (let ((mask (cffi:foreign-bitfield-value 'service-type values)))
       `(setf (cffi:mem-ref ,service-type :int) ,mask)))
@@ -264,11 +268,12 @@
     (when (< length +max-group-name+)
       (setf (aref destination length) 0)))
   (with-pointers-to-vector-data ((group-ptr destination) (data-ptr data))
-    (let ((result (spread-multicast handle
-                                    2 ; service-type
-                                    group-ptr
-                                    0 ; message-type
-                                    (length data) data-ptr)))
+    (let ((result (spread-multicast
+                   handle
+                   (service-type :reliable-mess :self-discard)
+                   group-ptr
+                   0 ; message-type
+                   (length data) data-ptr)))
       (declare (type fixnum result))
       (cond
         ((not (minusp result))
@@ -292,11 +297,12 @@
        (when (< length)
          (setf (aref groups (+ offset length)) 0)))
     (with-pointers-to-vector-data ((groups-ptr groups) (data-ptr data))
-      (let ((result (spread-multigroup-multicast handle
-                                                 2          ; service-type
-                                                 num-groups groups-ptr
-                                                 0          ; message-type
-                                                 (length data) data-ptr)))
+      (let ((result (spread-multigroup-multicast
+                     handle
+                     (service-type :reliable-mess :self-discard)
+                     num-groups groups-ptr
+                     0 ; message-type
+                     (length data) data-ptr)))
         (declare (type fixnum result))
         (cond
           ((not (minusp result))

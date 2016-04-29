@@ -353,6 +353,19 @@ be send but larger messages signal an error.")
 
 (addtest (connection-root
           :documentation
+          "Test that `connection' instances do not receive messages
+           sent by themselves.")
+  self-discard
+
+  (with-connection (connection daemon)
+    (with-group (connection "group")
+      (send connection "group" "foo")
+      (loop :repeat 10 :do
+         (ensure-null (receive connection :block? nil))
+         (sleep .1)))))
+
+(addtest (connection-root
+          :documentation
           "Test the `print-object' method on `connection'.")
   print
 
