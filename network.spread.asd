@@ -9,11 +9,6 @@
    #:cl
    #:asdf)
 
-  ;; Version stuff
-  (:export
-   #:version/list
-   #:version/string)
-
   ;; Configuration stuff
   (:export
    #:spread-library-pathname
@@ -28,43 +23,12 @@
 
 (cl:in-package #:network.spread-system)
 
-;;; Version stuff
-
-(defparameter +version-major+ 0
-  "Major component of version number.")
-
-(defparameter +version-minor+ 2
-  "Minor component of version number.")
-
-(defparameter +version-revision+ 1
-  "Revision component of version number.")
-
-(defun version/list (&key
-                     (revision? t))
-  "Return a version of the form (MAJOR MINOR [REVISION]) where
-REVISION is optional.
-
-REVISION? controls whether REVISION should be included. Default
-behavior is to include REVISION."
-  (append (list +version-major+ +version-minor+)
-          (when revision? (list +version-revision+))))
-
-(defun version/string (&rest args
-                       &key
-                       revision?)
-  "Return a version string of the form
-\"MAJOR.MINOR[.REVISION]\" where REVISION is optional.
-
-See `version/list' for details on keyword parameters."
-  (declare (ignore revision?))
-  (format nil "~{~A.~A~^.~A~}" (apply #'version/list args)))
-
 ;;; System definition
 
 (defsystem :network.spread
   :author      "Jan Moringen <jmoringe@techfak.uni-bielefeld.de>"
   :maintainer  "Jan Moringen <jmoringe@techfak.uni-bielefeld.de>"
-  :version     #.(version/string)
+  :version     (:read-file-form "version-string.sexp")
   :license     "LLGPLv3" ; see COPYING file for details.
   :description "This system provides a Common Lisp interface to the
 spread group communication system."
@@ -104,10 +68,10 @@ spread group communication system."
 (defsystem :network.spread-test
   :author      "Jan Moringen <jmoringe@techfak.uni-bielefeld.de>"
   :maintainer  "Jan Moringen <jmoringe@techfak.uni-bielefeld.de>"
-  :version     #.(version/string)
+  :version     (:read-file-form "version-string.sexp")
   :license     "LLGPLv3" ; see COPYING file for details.
   :description "This system provides unit tests for the network.spread system."
-  :depends-on  ((:version :network.spread #.(version/string))
+  :depends-on  ((:version :network.spread (:read-file-form "version-string.sexp"))
 
                 (:version :fiveam         "1.3"))
   :components  ((:module     "test"
