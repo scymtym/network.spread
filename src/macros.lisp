@@ -1,6 +1,6 @@
-;;;; macros.lisp ---
+;;;; macros.lisp --- Macros provided by the network.spread system.
 ;;;;
-;;;; Copyright (C) 2011, 2012, 2013 Jan Moringen
+;;;; Copyright (C) 2011-2016 Jan Moringen
 ;;;;
 ;;;; Author: Jan Moringen <jmoringe@techfak.uni-bielefeld.de>
 
@@ -17,7 +17,7 @@
 
 (defmacro with-group ((connection group) &body body)
   "Run BODY with CONNECTION being a member of the spread group named
-GROUP."
+   GROUP."
   (once-only (connection group)
     `(unwind-protect
           (progn
