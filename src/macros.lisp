@@ -6,21 +6,25 @@
 
 (cl:in-package #:network.spread)
 
+(defun call-with-connection (daemon thunk)
+  (let ((connection (connect daemon)))
+    (unwind-protect
+         (funcall thunk connection)
+      (disconnect connection))))
+
 (defmacro with-connection ((connection-var daemon) &body body)
   "Run BODY with CONNECTION-VAR bound to spread connection to DAEMON."
   (check-type connection-var symbol "a symbol")
+  `(call-with-connection ,daemon (lambda (,connection-var) ,@body)))
 
-  `(let ((,connection-var (connect ,daemon)))
-     (unwind-protect
-          (progn ,@body)
-       (disconnect ,connection-var))))
+(defun call-with-group (connection group thunk)
+  (unwind-protect
+       (progn
+         (join connection group)
+         (funcall thunk))
+    (leave connection group)))
 
 (defmacro with-group ((connection group) &body body)
   "Run BODY with CONNECTION being a member of the spread group named
    GROUP."
-  (once-only (connection group)
-    `(unwind-protect
-          (progn
-            (join ,connection ,group)
-            ,@body)
-       (leave ,connection ,group))))
+  `(call-with-group ,connection ,group (lambda () ,@body)))
