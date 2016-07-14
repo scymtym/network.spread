@@ -294,7 +294,7 @@
        :for offset :from 0 :by +max-group-name+
        :for length = (length destination) :do
        (setf (subseq groups offset (+ offset length)) destination)
-       (when (< length)
+       (when (< length +max-group-name+)
          (setf (aref groups (+ offset length)) 0)))
     (with-pointers-to-vector-data ((groups-ptr groups) (data-ptr data))
       (let ((result (spread-multigroup-multicast
