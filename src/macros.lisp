@@ -17,14 +17,45 @@
   (check-type connection-var symbol "a symbol")
   `(call-with-connection ,daemon (lambda (,connection-var) ,@body)))
 
-(defun call-with-group (connection group thunk)
-  (unwind-protect
-       (progn
-         (join connection group)
-         (funcall thunk))
-    (leave connection group)))
+(defun call-with-group (connection group thunk &key (wait? t))
+  (if wait?
+      (let+ ((joined? nil)
+             (left?   nil)
+             ((&flet comsume-until (thunk)
+                (loop :until (funcall thunk)
+                   :do (receive connection :block? nil)))))
+        (hooks:with-handlers
+            (((hooks:object-hook connection 'join-hook)
+              (lambda (group* members)
+                (declare (ignore members))
+                (when (string= group* group)
+                  (setf joined? t))))
+             ((hooks:object-hook connection 'leave-hook)
+              (lambda (group* members)
+                (declare (ignore members))
+                (when (string= group* group)
+                  (setf left? t)))))
+          (unwind-protect
+               (progn
+                 (join connection group)
+                 (comsume-until (lambda () joined?))
+                 (funcall thunk))
+            (leave connection group)
+            (comsume-until (lambda () left?)))))
+      (unwind-protect
+           (progn
+             (join connection group)
+             (funcall thunk))
+        (leave connection group))))
 
-(defmacro with-group ((connection group) &body body)
+(defmacro with-group ((connection group &key (wait? nil wait?-supplied?))
+                      &body body)
   "Run BODY with CONNECTION being a member of the spread group named
-   GROUP."
-  `(call-with-group ,connection ,group (lambda () ,@body)))
+   GROUP.
+
+   WAIT? controls whether execution of BODY should start immediately
+   or only after a join message indicates success of the requested
+   join operation. Similarly for the leave operation after executing
+   BODY."
+  `(call-with-group ,connection ,group (lambda () ,@body)
+                    ,@(when wait?-supplied? `(:wait? ,wait?))))

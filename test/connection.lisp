@@ -334,13 +334,16 @@ be send but larger messages signal an error.")
                      :test #'equalp)
 
         ;; Buffer too small => spread-client-error: buffer-too-short
-        (send sender "group" message)
-        (when (> (length message) 2)
-          (ensure-condition 'spread-client-error
-            (receive-into receiver (make-octet-vector 2)
-                          :block?         t
-                          :return-groups? group?
-                          :return-sender? sender?)))
+        ;;
+        ;; This cannot be tested due to a bug in the Spread client
+        ;; library.
+        #+spread-fixed (send sender "group" message)
+        #+spread-fixed (when (> (length message) 2)
+                         (ensure-condition 'spread-client-error
+                           (receive-into receiver (make-octet-vector 2)
+                                         :block?         t
+                                         :return-groups? group?
+                                         :return-sender? sender?)))
 
         ;; Non-blocking receive should just return.
         (receive-into receiver buffer

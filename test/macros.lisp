@@ -1,6 +1,6 @@
 ;;;; macros.lisp --- Unit tests for macros provided by the network.spread system.
 ;;;;
-;;;; Copyright (C) 2011, 2012, 2013 Jan Moringen
+;;;; Copyright (C) 2011-2016 Jan Moringen
 ;;;;
 ;;;; Author: Jan Moringen <jmoringe@techfak.uni-bielefeld.de>
 
@@ -35,10 +35,13 @@ network.spread system."))
           "Smoke test for the `with-group' macro.")
   smoke
 
-  (with-connection (connection daemon)
-    (with-group (connection "foo")
-      (ensure-same
-       (connection-groups connection) '("foo")
-       :test #'equal))
+  (flet ((do-it (wait?)
+           (with-connection (connection daemon)
+             (with-group (connection "foo" :wait? wait?)
+               (ensure-same
+                (connection-groups connection) '("foo")
+                :test #'equal))
 
-    (ensure-null (connection-groups connection))))
+             (ensure-null (connection-groups connection)))))
+    (do-it t)
+    (do-it nil)))
