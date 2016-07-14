@@ -244,7 +244,7 @@
                 (return/full nil nil))))
 
             ;; Both, sender and group list, should definitely be
-            ;; received returned.
+            ;; returned.
             (t
              (set-service-type service-type)
              (let ((result (receive/with-data +max-groups+)))
