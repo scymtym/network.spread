@@ -17,10 +17,11 @@
    When using Spread, the first step usually consists in establishing
    a connection to the Spread daemon. The following example
    demonstrates this for a situation in which the Spread daemon is
-   running on the local machine and listening on port 5103:
-#+BEGIN_SRC lisp
-(defvar *connection* (network.spread:connect "5103"))
-#+END_SRC
+   running on the local machine and listening on port 4803 (the
+   default port):
+   #+BEGIN_SRC lisp :results silent :exports both
+     (defvar *connection* (network.spread:connect "4803"))
+   #+END_SRC
 ** Receiving Messages
    After a connection has been established, data can be sent and
    received. However, in order to receive data, it is necessary to
@@ -29,34 +30,38 @@
    ="mygroup"=. The number of groups a given connection is a member of
    is evident from the printed representation of the connection
    instance.
-#+BEGIN_SRC lisp
-(network.spread:join *connection* "mygroup")
-#+END_SRC
+   #+BEGIN_SRC lisp :results silent :exports both
+     (network.spread:join *connection* "mygroup")
+   #+END_SRC
    After joining one ore more groups,  messages can be received:
-#+BEGIN_SRC lisp
-(network.spread:receive *connection* :block? nil)
-#+END_SRC
+   #+BEGIN_SRC lisp :results value :export both
+     (network.spread:receive *connection* :block? nil)
+   #+END_SRC
+
+   #+RESULTS:
+   : NIL
+
    Consing can be avoided by receiving into a previously allocated
    buffer:
-#+BEGIN_SRC lisp
-(defvar *buffer* (nibbles:make-octet-vector 10000))
+   #+BEGIN_SRC lisp :results value :exports both
+     (defvar *buffer* (nibbles:make-octet-vector 10000))
 
-(network.spread:receive-into *connection* *buffer*)
-#+END_SRC
+     (network.spread:receive-into *connection* *buffer*)
+   #+END_SRC
 ** Sending Messages
    To send data to receivers in a Spread group, the generic functions
    =network.spread:send= and =network.spread:send-bytes= are used (the
    delegates the actual work to the latter):
-#+BEGIN_SRC lisp
-(network.spread:send *connection* "mygroup" "mymessage")
-#+END_SRC
+   #+BEGIN_SRC lisp :results silent :exports both
+     (network.spread:send *connection* "mygroup" "mymessage")
+   #+END_SRC
    Note that it is not necessary to join a Spread group in order to
    send messages to that group.
 
    It is possible to send a single message to multiple groups:
-#+BEGIN_SRC lisp
-(network.spread:send *connection* '("mygroup" "othergroup") "mymessage")
-#+END_SRC
+   #+BEGIN_SRC lisp :results silent :exports both
+     (network.spread:send *connection* '("mygroup" "othergroup") "mymessage")
+   #+END_SRC
 * Settings                                                         :noexport:
 
 #+OPTIONS: H:2 num:nil toc:t \n:nil @:t ::t |:t ^:t -:t f:t *:t <:t
