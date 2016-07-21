@@ -1,6 +1,6 @@
 ;;;; conditions.lisp --- Conditions signaled by the network.spread system.
 ;;;;
-;;;; Copyright (C) 2011, 2012, 2013, 2015 Jan Moringen
+;;;; Copyright (C) 2011-2016 Jan Moringen
 ;;;;
 ;;;; Author: Jan Moringen <jmoringe@techfak.uni-bielefeld.de>
 
@@ -71,8 +71,8 @@
    :data (missing-required-initarg 'message-too-long :data))
   (:report
    (lambda (condition stream)
-     (format stream "~@<Data is ~:D octets long, which longer than the ~
-                     maximum message length ~:D.~@:>"
+     (format stream "~@<Data is ~:D octets long, which is longer than ~
+                     the maximum message length ~:D.~@:>"
              (length (message-too-long-data condition))
              +maximum-message-data-length+)))
   (:documentation
