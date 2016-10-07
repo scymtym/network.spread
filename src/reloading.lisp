@@ -1,6 +1,6 @@
 ;;;; reloading.lisp --- Reloading of the Spread library after re-init.
 ;;;;
-;;;; Copyright (C) 2013, 2015 Jan Moringen
+;;;; Copyright (C) 2013, 2015, 2016 Jan Moringen
 ;;;;
 ;;;; Author: Jan Moringen <jmoringe@techfak.uni-bielefeld.de>
 
@@ -65,6 +65,6 @@ This may be unnecessary or not even make sense for some Lisps. Do
 nothing in these cases.
 
 See `enable-reload-spread-library'."
-  (removef uiop::*image-dump-hook* 'unload-spread-library)
+  (removef uiop:*image-dump-hook* 'unload-spread-library)
   (when *init-hook*
-    (removef uiop::*image-restore-hook* *init-hook*)))
+    (removef uiop:*image-restore-hook* *init-hook*)))
