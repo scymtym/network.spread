@@ -41,6 +41,7 @@ spread group communication system."
                 :nibbles
                 :cffi
                 :trivial-garbage
+                :usocket
 
                 (:version :architecture.service-provider "0.2")
                 :cl-hooks)
@@ -70,6 +71,15 @@ spread group communication system."
                               (:file       "conditions")
                               (:file       "protocol")
                               (:file       "util")
+                              (:file       "client")))
+
+                (:module     "low-level"
+                 :pathname   "src/low-level"
+                 :depends-on ("wire-protocol")
+                 :serial     t
+                 :components ((:file       "package")
+                              (:file       "types")
+                              (:file       "protocol")
                               (:file       "client")))
 
                 (:module     "src"
@@ -150,6 +160,12 @@ spread group communication system."
                               (:file       "mock-servers")
                               (:file       "mock-server-streams")
                               (:file       "client")))
+
+                (:module     "low-level"
+                 :pathname   "test/low-level"
+                 :depends-on ("test")
+                 :serial     t
+                 :components ((:file       "package")))
 
                 (:module     "daemon"
                  :pathname   "test/daemon"
