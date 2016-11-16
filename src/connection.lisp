@@ -1,6 +1,6 @@
 ;;;; connection.lisp --- Class representing connections to the Spread network.
 ;;;;
-;;;; Copyright (C) 2011, 2012, 2013, 2015 Jan Moringen
+;;;; Copyright (C) 2011-2016 Jan Moringen
 ;;;;
 ;;;; Author: Jan Moringen <jmoringe@techfak.uni-bielefeld.de>
 
@@ -72,7 +72,7 @@ at groups, but not for sending messages to groups."))
 
 (defmethod initialize-instance :after ((instance connection) &key)
   (let ((handle (slot-value instance 'handle)))
-    (tg:finalize instance #'(lambda () (%disconnect handle)))))
+    (tg:finalize instance (lambda () (%disconnect handle)))))
 
 (defmethod disconnect ((connection connection))
   (tg:cancel-finalization connection)

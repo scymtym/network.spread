@@ -1,6 +1,6 @@
 ;;;; daemon.lisp --- Function for running the spread daemon.
 ;;;;
-;;;; Copyright (C) 2011, 2012, 2013 Jan Moringen
+;;;; Copyright (C) 2011-2016 Jan Moringen
 ;;;;
 ;;;; Author: Jan Moringen <jmoringe@techfak.uni-bielefeld.de>
 
@@ -127,16 +127,16 @@ attempt fails, an `failed-to-start-daemon' error is signaled."
   (let ((attempt 1))
     (handler-bind
         ((failed-to-start-daemon
-          #'(lambda (condition)
-              (declare (ignore condition))
-              (let ((restart (find-restart 'retry)))
-                (when (and restart (< attempt num-attempts))
-                  (warn "~@<Spread daemon failed to start on ~:r ~
-                         attempt~:[.~;; retrying.~]~@:>"
-                        attempt (< attempt num-attempts))
-                  (sleep retry-delay)
-                  (incf attempt)
-                  (invoke-restart restart))))))
+          (lambda (condition)
+            (declare (ignore condition))
+            (let ((restart (find-restart 'retry)))
+              (when (and restart (< attempt num-attempts))
+                (warn "~@<Spread daemon failed to start on ~:r ~
+                       attempt~:[.~;; retrying.~]~@:>"
+                      attempt (< attempt num-attempts))
+                (sleep retry-delay)
+                (incf attempt)
+                (invoke-restart restart))))))
       (apply #'start-daemon
              (remove-from-plist args :num-attempts :retry-delay)))))
 
