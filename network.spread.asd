@@ -36,6 +36,7 @@ spread group communication system."
                 :let-plus
                 :more-conditions
                 :log4cl
+                :utilities.binary-dump
 
                 :nibbles
                 :cffi
@@ -58,6 +59,18 @@ spread group communication system."
                               (:file       "conditions")
                               (:file       "protocol")
                               (:file       "method-null")))
+
+                (:module     "wire-protocol"
+                 :pathname   "src/wire-protocol"
+                 :depends-on ("authentication")
+                 :serial     t
+                 :components ((:file       "package")
+                              (:file       "constants")
+                              (:file       "types")
+                              (:file       "conditions")
+                              (:file       "protocol")
+                              (:file       "util")
+                              (:file       "client")))
 
                 (:module     "src"
                  :depends-on ("base")
@@ -126,6 +139,12 @@ spread group communication system."
                  :serial     t
                  :components ((:file       "package")
                               (:file       "protocol")))
+
+                (:module     "wire-protocol"
+                 :pathname   "test/wire-protocol"
+                 :depends-on ("test")
+                 :serial     t
+                 :components ((:file       "package")))
 
                 (:module     "daemon"
                  :pathname   "test/daemon"
