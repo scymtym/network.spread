@@ -31,13 +31,11 @@
                  ,@*daemon-parameters*
                  ,@extra-args)
      (declare (ignorable args program wait))
-     ,(concatenate
-       'string
-       "Start a spread daemon with the specified parameters and return
-        the process object. If the attempt fails, an
-        `failed-to-start-daemon' error is signaled."
-       (unless (emptyp doc) " ")
-       doc)
+     ,(format nil
+              "Start a spread daemon with the specified parameters and ~
+               return the process object. If the attempt fails, an ~
+               `failed-to-start-daemon' error is signaled.~@[ ~A~]"
+              doc)
      (when (eq port :random)
        (setf port (+ 1024 (random (- 65535 1024)))))
      (flet ((collect-daemon-options ()
@@ -58,7 +56,10 @@
     (with-output-to-file (stream config-filename
                                  :if-exists :supersede)
       (format stream
-              "Spread_Segment ~A:~A {~%~4T~A ~A~%}~:[~;~%~%SocketPortReuse = ON~%~]~%"
+              "Spread_Segment ~A:~A {~%~
+                   ~4T~A ~A~%~
+               }~
+               ~:[~;~%~%SocketPortReuse = ON~%~]~%"
               broadcast-address port host host-address reuse-socket?))
     ;; Start a spread daemon that uses the configuration file.
     (let* ((output  (make-string-output-stream))
@@ -104,7 +105,8 @@
                           (format stream "~@<Use a different Spread ~
                                           daemon executable (instead ~
                                           of ~S) and retry starting ~
-                                          the daemon.~@:>" program))
+                                          the daemon.~@:>"
+                                  program))
            :interactive (lambda ()
                           (format *query-io* "Spread daemon executable (not evaluated): ")
                           (force-output *query-io*)
@@ -116,7 +118,8 @@
                      (format stream "~@<Retry starting the Spread ~
                                      daemon (executable ~S) with ~
                                      parameters ~_~{~{~A = ~S~}~^, ~
-                                     ~_~}.~@:>" program
+                                     ~_~}.~@:>"
+                             program
                              (collect-daemon-options)))
            (go :start))))
     (values result (format nil "~D~:[@~A~;~]"
