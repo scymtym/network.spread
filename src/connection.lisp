@@ -1,6 +1,6 @@
 ;;;; connection.lisp --- Class representing connections to the Spread network.
 ;;;;
-;;;; Copyright (C) 2011-2016 Jan Moringen
+;;;; Copyright (C) 2011-2017 Jan Moringen
 ;;;;
 ;;;; Author: Jan Moringen <jmoringe@techfak.uni-bielefeld.de>
 
@@ -10,7 +10,7 @@
 
 (declaim (inline check-group-name))
 (defun check-group-name (name)
-  (unless (<= (length name)  +maximum-group-name-length+)
+  (unless (<= (length name) +group-name-length-limit+)
     (error 'group-too-long-error
            :group (etypecase name
                     (string       (ascii-to-octets name))
@@ -21,10 +21,9 @@
 ;;; `connection'
 
 (defclass connection ()
-  ((handle      :initarg  :handle
-                :type     integer
+  ((mailbox     :initarg  :mailbox
                 :documentation
-                "The handle of this connection as assigned by the
+                "The mailbox of this connection as assigned by the
                  Spread daemon.")
    (daemon-name :initarg  :daemon-name
                 :type     string
@@ -72,30 +71,55 @@
     addressed at groups, but not for sending messages to groups."))
 
 (defmethod initialize-instance :after ((instance connection) &key)
-  (let ((handle (slot-value instance 'handle)))
-    (tg:finalize instance (lambda () (%disconnect handle)))))
+  (let ((mailbox (slot-value instance 'mailbox)))
+    (tg:finalize instance (lambda ()
+                            (network.spread.low-level:client-disconnect
+                             mailbox)))))
 
 (defmethod disconnect ((connection connection))
   (tg:cancel-finalization connection)
-  (%disconnect (slot-value connection 'handle)))
+  (network.spread.low-level:client-disconnect
+   (slot-value connection 'mailbox)))
+
+;; TODO where to put this?
+;; TODO inline
+(defun coerce-group-name (group)
+  (typecase group
+    (simple-octet-vector group)
+    (octet-vector        (coerce group 'simple-octet-vector))
+    (string              (sb-ext:string-to-octets group :external-format :ascii)))) ; TODO speed this case up
+
+(defmethod join ((connection connection) (group simple-array))
+  (check-type group octet-vector)
+  (network.spread.low-level:client-join
+   (slot-value connection 'mailbox) group))
 
 (defmethod join ((connection connection) (group string))
-  (%join (slot-value connection 'handle) (check-group-name group)))
+  (network.spread.low-level:client-join
+   (slot-value connection 'mailbox)
+   (coerce-group-name (check-group-name group))))
 
 (defmethod join :after ((connection connection) (group string))
   (pushnew group (slot-value connection 'groups) :test #'string=))
 
-;; Relies on the `string'-specialized method
+;;; Relies on the `string'- and `simple-array'-specialized methods
 (defmethod join ((connection connection) (group sequence))
   (map nil (curry #'join connection) group))
 
+(defmethod leave ((connection connection) (group simple-array))
+  (check-type group octet-vector)
+  (network.spread.low-level:client-leave
+   (slot-value connection 'mailbox) group))
+
 (defmethod leave ((connection connection) (group string))
-  (%leave (slot-value connection 'handle) (check-group-name group)))
+  (network.spread.low-level:client-leave
+   (slot-value connection 'mailbox)
+   (coerce-group-name (check-group-name group))))
 
 (defmethod leave :after ((connection connection) (group string))
   (removef (slot-value connection 'groups) group :test #'string=))
 
-;; Relies on the `string'-specialized method
+;;; Relies on the `string'- and `octet-vector'-specialized methods
 (defmethod leave ((connection connection) (group sequence))
   (map nil (curry #'leave connection) group))
 
@@ -112,16 +136,16 @@
                          (return-groups? t))
   (check-type buffer simple-octet-vector)
 
-  (let ((handle (slot-value connection 'handle)))
+  (let ((mailbox (slot-value connection 'mailbox)))
     ;; Do not enter/break out of loop when non-blocking and no
     ;; messages queued.
-    (loop :while (or block? (%poll handle)) :do
+    (loop :while (or block? (network.spread.low-level:client-poll mailbox)) :do
        ;; Receive next message, blocking if necessary. Handle
        ;; membership messages via hooks (callbacks). Keep receiving
        ;; until the message is a regular message.
        (let+ (((&values type received-bytes sender groups message-type)
-               (%receive-into handle buffer start end
-                              return-sender? return-groups?)))
+               (network.spread.low-level:client-receive-into
+                mailbox buffer start end return-sender? return-groups?)))
          (case type
            (:regular ; Return regular messages.
             (return (values received-bytes sender groups message-type)))
@@ -142,20 +166,20 @@
 
   ;; SBCL won't do stack allocation otherwise
   (locally (declare (optimize (speed 3) (debug 0) (safety 0)))
-    (let ((buffer (make-octet-vector +max-message+)))
+    (let ((buffer (make-octet-vector (message-data-length-limit 0))))
       (declare (type simple-octet-vector buffer)
                (dynamic-extent buffer))
       (let+ (((&values received-bytes sender groups message-type)
               (apply #'receive-into connection buffer args)))
         (when received-bytes
-          (locally (declare (type (integer 0 #.+maximum-message-data-length+)
+          (locally (declare (type (integer 0 #.(message-data-length-limit 0))
                                   received-bytes))
             (values (subseq buffer 0 received-bytes) sender groups message-type)))))))
 
-(labels ((check-data (data)
+(labels ((check-data (data group-count)
            (check-type data simple-octet-vector)
-           (unless (<= (length data) +maximum-message-data-length+)
-             (error 'message-too-long :data data)))
+           (unless (<= (length data) (message-data-length-limit group-count))
+             (error 'message-too-long :data data :group-count group-count)))
          (maybe-coerce-destination (destination)
            (etypecase destination
              (simple-octet-vector
@@ -175,26 +199,29 @@
                          (data        simple-array))
     (typecase destination
       (simple-octet-vector
-       (check-data data)
-       (%send-one (slot-value connection 'handle) destination data))
+       (check-data data 0) ; TODO group-count
+       (network.spread.low-level:client-send
+        (slot-value connection 'mailbox) destination t 0 data :fifo)) ; TODO
       (t
        (call-next-method))))
 
   (defmethod send-bytes ((connection  connection)
                          (destination string)
                          (data        simple-array))
-    (check-data data)
-    (%send-one (slot-value connection 'handle)
-               (prepare-destination destination)
-               data))
+    (check-data data 1)
+    (network.spread.low-level:client-send
+     (slot-value connection 'mailbox)
+     (prepare-destination destination) t
+     0 data :fifo)) ; TODO
 
   (defmethod send-bytes ((connection  connection)
                          (destination sequence)
                          (data        simple-array))
-    (check-data data)
-    (%send-multiple (slot-value connection 'handle)
-                    (map 'vector #'prepare-destination destination)
-                    data)))
+    (check-data data (length destination))
+    (network.spread.low-level:client-send
+     (slot-value connection 'mailbox)
+     (map 'vector #'prepare-destination destination) t
+     0 data :fifo))) ; TODO
 
 (defmethod send ((connection  connection)
                  (destination string)
@@ -224,19 +251,22 @@
         (send-bytes connection destination octets))))
 
 (defmethod print-object ((object connection) stream)
-  (with-slots (handle name groups) object
-    (print-unreadable-object (object stream :type t)
-      (format stream "~A (~D) #~D"
-              name (length groups) handle))))
+  (with-slots (name groups) object
+    (print-unreadable-object (object stream :type t :identity t)
+      (format stream "~A (~D)" name (length groups)))))
 
 ;;; Constructing a connection
 
 (defmethod connect ((daemon string))
-  (let+ (((&values handle name) (%connect daemon :membership? t)))
+  (let+ (((&values host port) (network.spread.base:parse-daemon-name daemon))
+         (mailbox (network.spread.low-level:client-connect
+                   host port nil t 0)))
     (make-instance 'connection
-                   :handle      handle
+                   :mailbox     mailbox
                    :daemon-name daemon
-                   :name        name)))
+                   :name        (sb-ext:octets-to-string
+                                 (network.spread.low-level:client-private-group
+                                  mailbox)))))
 
 (defmethod connect :around ((daemon string))
   ;; Install restarts around the connection attempt.

@@ -1,6 +1,6 @@
 ;;;; connection.lisp --- Unit tests for the connection class.
 ;;;;
-;;;; Copyright (C) 2011-2016 Jan Moringen
+;;;; Copyright (C) 2011-2017 Jan Moringen
 ;;;;
 ;;;; Author: Jan Moringen <jmoringe@techfak.uni-bielefeld.de>
 
@@ -53,7 +53,7 @@
       (disconnect connection)))
 
   ;; Illegal spread name.
-  (signals spread-client-error
+  (signals daemon-name-syntax-error
     (connect "no-such-daemon"))
 
   ;; Not cool enough to use that port.
@@ -73,7 +73,7 @@
                                 (unless tried-once?
                                   (setf tried-once? t)
                                   (invoke-restart (find-restart 'use-daemon) *daemon*)))))
-      (connect "no-such-daemon"))))
+      (connect "1234@no-such-daemon"))))
 
 (test membership/smoke
   "Smoke test for group membership functions."
@@ -111,11 +111,11 @@
 
   (with-connection (connection *daemon*)
     (signals group-too-long-error
-      (join connection (make-string (* 2 +max-group-name+)
+      (join connection (make-string (* 2 +group-name-length-limit+)
                                     :initial-element #\a)))
 
     (signals group-too-long-error
-      (leave connection (make-string (* 2 +max-group-name+)
+      (leave connection (make-string (* 2 +group-name-length-limit+)
                                      :initial-element #\a)))))
 
 (test membership-hooks
@@ -194,7 +194,7 @@
     ;; Too long group name should signal `group-too-long-error'.
     (signals group-too-long-error
       (send connection
-            (make-string (* 2 +maximum-group-name-length+)
+            (make-string (* 2 +group-name-length-limit+)
                          :initial-element #\a)
             "does-not-matter"))
 
@@ -221,14 +221,14 @@
         (with-group (receiver "message-size-limit")
           ;; Longest possible message => has to work.
           (send sender "message-size-limit"
-                (make-message +maximum-message-data-length+))
-          (is (= +maximum-message-data-length+
+                (make-message (message-data-length-limit 1)))
+          (is (= (message-data-length-limit 1)
                  (length (receive receiver))))
 
           ;; Longer message => has to signal an error.
           (signals message-too-long
             (send sender "message-size-limit"
-                  (make-message (1+ +maximum-message-data-length+)))))))))
+                  (make-message (1+ (message-data-length-limit 1))))))))))
 
 (test receive/failure
   "Test error handling in case of failed receive operations."

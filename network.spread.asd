@@ -11,9 +11,6 @@
 
   ;; Configuration stuff
   (:export
-   #:spread-library-pathname
-   #:*spread-library-pathname*
-
    #:*default-port*
    #:*default-daemon-program*)
 
@@ -39,7 +36,6 @@ spread group communication system."
                 :utilities.binary-dump
 
                 :nibbles
-                :cffi
                 :trivial-garbage
                 :usocket
 
@@ -83,24 +79,16 @@ spread group communication system."
                               (:file       "client")))
 
                 (:module     "src"
-                 :depends-on ("base")
+                 :depends-on ("base" "wire-protocol" "low-level")
                  :serial     t
                  :components ((:file       "package")
 
-                              (:file       "types")
-                              (:file       "ffi")
-                              (:file       "low-level")
+                              (:file       "types") ; TODO adapt
 
-                              (:file       "variables")
                               (:file       "conditions")
                               (:file       "protocol")
                               (:file       "connection")
-                              (:file       "macros")
-
-                              (:file       "reloading")
-
-                              (:file       "fix-signal-handlers"
-                                           :if-feature (:and :sbcl (:not :win32)))))
+                              (:file       "macros")))
 
                 (:module     "daemon"
                  :pathname   "src/daemon"
@@ -186,15 +174,6 @@ spread group communication system."
             (network.spread.test:run-tests))")))
 
 ;;; Configuration stuff
-
-(defun spread-library-pathname ()
-  "Interpret hint as to where the Spread library can be found."
-  (or (uiop:getenv "SPREAD_LIBRARY") nil))
-
-(defparameter *spread-library-pathname* (spread-library-pathname)
-  "The pathname of the Spread library. nil or relative pathnames
-indicate that the operating system's facilities should be used to
-locate the library.")
 
 (defparameter *default-port*
   (or (let ((value (uiop:getenv "SPREAD_PORT")))

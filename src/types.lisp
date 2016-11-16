@@ -6,17 +6,6 @@
 
 (cl:in-package #:network.spread)
 
-;;; Constants
-
-(defconstant +max-message+    140000
-  "The maximum size of a single message.")
-
-(defconstant +max-group-name+ 32
-  "The maximum size of a group name.")
-
-(defconstant +max-groups+     1024
-  "The maximum number of groups in a single API call.")
-
 ;;; Membership-related keywords
 
 (deftype membership-event ()

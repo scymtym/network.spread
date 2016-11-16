@@ -28,6 +28,11 @@
    #:ascii-to-octets
    #:octets-to-ascii)
 
+  (:import-from #:network.spread.wire-protocol
+   #:+group-name-length-limit+
+   #:+group-count-limit+
+   #:message-data-length-limit)
+
   (:shadow
    #:leave)
 
@@ -55,10 +60,11 @@
    #:retry
    #:use-daemon)
 
-  ;; Variables
+  ;; Constants and variables
   (:export
-   #:+maximum-message-data-length+
-   #:+maximum-group-name-length+)
+   #:+group-name-length-limit+
+   #:+group-count-limit+
+   #:message-data-length-limit)
 
   ;; Utilities
   (:export

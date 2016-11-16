@@ -15,9 +15,6 @@
 
    #:network.spread)
 
-  (:import-from #:network.spread
-   #:+max-group-name+)
-
   ;; Test utilities
   (:export
    #:mock-server-coroutine)
