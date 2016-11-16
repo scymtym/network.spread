@@ -8,6 +8,10 @@
 * Introduction
   The =network.spread= system provides Common Lisp bindings for the
   client library of the [[http://www.spread.org/][Spread group communication system]].
+
+  #+ATTR_HTML: :alt "build status image" :title Build Status :align right
+  [[https://travis-ci.org/scymtym/network.spread][https://travis-ci.org/scymtym/network.spread.svg]]
+
 * Tutorial
 ** Connecting
    When using Spread, the first step usually consists in establishing
