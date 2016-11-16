@@ -16,15 +16,16 @@
       (reuse-socket?     t)
       (wait              2))
     "List of keyword parameter names and default values for
-start-daemon* functions."))
+     start-daemon* functions."))
 
 (defmacro define-start-daemon-function (name (&rest extra-args)
                                         doc
                                         &body body)
   "Define a \"start-daemon\" function named NAME with body BODY that
-takes keyword arguments EXTRA-ARGS in addition to those defined in
-`*daemon-parameters*'. DOC is concatenated with a default
-documentation string."
+   takes keyword arguments EXTRA-ARGS in addition to those defined in
+   `*daemon-parameters*'.
+
+   DOC is concatenated with a default documentation string."
   `(defun ,name (&rest args
                  &key
                  ,@*daemon-parameters*
@@ -33,8 +34,8 @@ documentation string."
      ,(concatenate
        'string
        "Start a spread daemon with the specified parameters and return
-the process object. If the attempt fails, an `failed-to-start-daemon'
-error is signaled."
+        the process object. If the attempt fails, an
+        `failed-to-start-daemon' error is signaled."
        (unless (emptyp doc) " ")
        doc)
      (when (eq port :random)
@@ -88,9 +89,11 @@ error is signaled."
       process)))
 
 (define-start-daemon-function start-daemon ()
-    "This function establishes a restart called `retry' around the
-attempt to start the Spread daemon. Invoking the restart will cause
-another attempt with identical options to be made."
+  "This function establishes a restart called `retry' around the
+   attempt to start the Spread daemon.
+
+   Invoking the restart will cause another attempt with identical
+   options to be made."
   (let (result)
     (tagbody
      :start
@@ -121,9 +124,11 @@ another attempt with identical options to be made."
 
 (define-start-daemon-function start-daemon/retry ((num-attempts 4)
                                                   (retry-delay 10))
-    "This function makes NUM-ATTEMPTS attempts to start the Spread
-daemon, waiting RETRY-DELAY seconds between attempts. If the final
-attempt fails, an `failed-to-start-daemon' error is signaled."
+  "This function makes NUM-ATTEMPTS attempts to start the Spread
+   daemon, waiting RETRY-DELAY seconds between attempts.
+
+   If the final attempt fails, an `failed-to-start-daemon' error is
+   signaled."
   (let ((attempt 1))
     (handler-bind
         ((failed-to-start-daemon
@@ -142,7 +147,7 @@ attempt fails, an `failed-to-start-daemon' error is signaled."
 
 (defun stop-daemon (process)
   "Stop the spread daemon PROCESS and clean the mess it leaves
-behind."
+   behind."
   (let ((pid             (sb-ext:process-pid process))
         (port            (getf (sb-ext:process-plist process) :port))
         (config-filename (getf (sb-ext:process-plist process) :config-file)))
@@ -165,8 +170,9 @@ behind."
                         (retry-delay       10))
                        &body body)
   "Execute BODY with a Spread daemon using the specified parameters
-running. see `start-daemon/retry' for an explanation of the
-parameters."
+   running.
+
+   See `start-daemon/retry' for an explanation of the parameters."
   (with-unique-names (process-var)
     `(let ((,process-var (start-daemon/retry
                           :port              ,port
@@ -185,8 +191,9 @@ parameters."
 
 (defun parse-daemon-name (name)
   "Split NAME into a port and host components.
-Return two values: the host component as string or nil if it is not
-specified and the port component as string."
+
+   Return two values: the host component as string or nil if it is not
+   specified and the port component as string."
   (let ((@-index (position #\@ name)))
     (if @-index
         (values (subseq name (1+ @-index)) (subseq name 0 @-index))
@@ -195,9 +202,7 @@ specified and the port component as string."
 ;;; Utility functions
 
 (defun %cleanup-after-spread-daemon (port config-filename)
-  "Clean up the socket corresponding to PORT and the configuration
-file CONFIG-FILENAME."
-  (ignore-errors
-    (delete-file config-filename))
-  (ignore-errors
-    (delete-file (format nil "/tmp/~A" port))))
+  ;; Clean up the socket corresponding to PORT and the configuration
+  ;; file CONFIG-FILENAME.
+  (ignore-errors (delete-file config-filename))
+  (ignore-errors (delete-file (format nil "/tmp/~A" port))))
