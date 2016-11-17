@@ -1,15 +1,11 @@
 ;;;; daemon.lisp --- Unit tests for daemon-related functions.
 ;;;;
-;;;; Copyright (C) 2011, 2012, 2013 Jan Moringen
+;;;; Copyright (C) 2011-2016 Jan Moringen
 ;;;;
 ;;;; Author: Jan Moringen <jmoringe@techfak.uni-bielefeld.de>
 
-(cl:in-package #:network.spread.test)
+(cl:in-package #:network.spread.daemon.test)
 
-(def-suite :network.spread.daemon
-  :in :network.spread
-  :description
-  "Test suite for daemon-related functions.")
 (in-suite :network.spread.daemon)
 
 (test smoke

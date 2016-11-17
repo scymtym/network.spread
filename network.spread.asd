@@ -46,6 +46,7 @@ spread group communication system."
                  :components ((:file       "package")
 
                               (:file       "types")
+                              (:file       "util")
                               (:file       "ffi")
                               (:file       "low-level")
 
@@ -57,11 +58,17 @@ spread group communication system."
 
                               (:file       "reloading")
 
-                              (:file       "daemon"
-                               :if-feature :sbcl)
-
                               (:file       "fix-signal-handlers"
-                               :if-feature (:and :sbcl (:not :win32))))))
+                                           :if-feature (:and :sbcl (:not :win32)))))
+
+                (:module     "daemon"
+                 :pathname   "src/daemon"
+                 :serial     t
+                 :components ((:file      "package")
+                              (:file      "variables")
+                              (:file      "conditions")
+                              (:file      "daemon"))
+                 :if-feature :sbcl))
 
   :in-order-to ((test-op (test-op :network.spread-test))))
 
@@ -78,13 +85,19 @@ spread group communication system."
                  :serial     t
                  :components ((:file       "package")
                               (:file       "connection")
-                              (:file       "macros")
+                              (:file       "macros")))
+
+                (:module     "daemon"
+                 :depends-on ("test")
+                 :pathname   "test/daemon"
+                 :serial     t
+                 :components ((:file       "package")
                               (:file       "daemon")))))
 
 (defmethod perform ((op     test-op)
                     (system (eql (find-system :network.spread-test))))
   (eval (read-from-string
-         "(network.spread:with-daemon
+         "(network.spread.daemon:with-daemon
               (:port network.spread-system:*test-port*)
             (network.spread.test:run-tests))")))
 

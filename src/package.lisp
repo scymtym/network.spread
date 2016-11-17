@@ -31,13 +31,7 @@
    #:message-too-long-data
 
    #:group-too-long-error
-   #:group-too-long-error-group
-
-   #:failed-to-start-daemon
-   #:failed-to-start-daemon-program
-   #:failed-to-start-daemon-exit-code
-   #:failed-to-start-daemon-options
-   #:failed-to-start-daemon-output)
+   #:group-too-long-error-group)
 
   ;; Restarts
   (:export
@@ -47,10 +41,11 @@
   ;; Variables
   (:export
    #:+maximum-message-data-length+
-   #:+maximum-group-name-length+
+   #:+maximum-group-name-length+)
 
-   #:*default-port*
-   #:*default-daemon-program*)
+  ;; Utilities
+  (:export
+   #:parse-daemon-name)
 
   ;; Spread protocol
   (:export
@@ -79,14 +74,6 @@
   (:export
    #:with-connection
    #:with-group)
-
-  ;; Spread daemon
-  (:export
-   #:start-daemon/no-restart #:start-daemon #:start-daemon/retry
-   #:stop-daemon
-   #:with-daemon
-
-   #:parse-daemon-name)
 
   ;; Reloading of the Spread library
   (:export
