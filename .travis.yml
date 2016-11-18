@@ -19,8 +19,7 @@ script:
   - ./cl
       -S '(:source-registry (:directory "'$(pwd)'") :ignore-inherited-configuration)'
       -e '(load "quicklisp/setup.lisp")'
-      -e '(ql:quickload (list :network.spread
-                              :network.spread-test))'
+      -e '(ql:quickload :network.spread/test)'
       # Tests cannot run without the Spread daemon, yet
       # '(or (network.spread.test:run-tests)
       #      (uiop:quit -1))'

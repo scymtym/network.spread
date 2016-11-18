@@ -70,9 +70,9 @@ spread group communication system."
                               (:file      "daemon"))
                  :if-feature :sbcl))
 
-  :in-order-to ((test-op (test-op :network.spread-test))))
+  :in-order-to ((test-op (test-op :network.spread/test))))
 
-(defsystem :network.spread-test
+(defsystem :network.spread/test
   :author      "Jan Moringen <jmoringe@techfak.uni-bielefeld.de>"
   :maintainer  "Jan Moringen <jmoringe@techfak.uni-bielefeld.de>"
   :version     (:read-file-form "version-string.sexp")
@@ -95,7 +95,7 @@ spread group communication system."
                               (:file       "daemon")))))
 
 (defmethod perform ((op     test-op)
-                    (system (eql (find-system :network.spread-test))))
+                    (system (eql (find-system :network.spread/test))))
   (eval (read-from-string
          "(network.spread.daemon:with-daemon
               (:port network.spread-system:*test-port*)
