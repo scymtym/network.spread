@@ -35,11 +35,13 @@ spread group communication system."
   :depends-on  (:alexandria
                 :let-plus
                 :more-conditions
+                :log4cl
 
                 :nibbles
                 :cffi
                 :trivial-garbage
 
+                (:version :architecture.service-provider "0.2")
                 :cl-hooks)
   :components  ((:module     "base"
                  :pathname   "src/base"
@@ -47,6 +49,15 @@ spread group communication system."
                  :components ((:file       "package")
                               (:file       "util")
                               (:file       "conditions")))
+
+                (:module     "authentication"
+                 :pathname   "src/authentication"
+                 :depends-on ("base")
+                 :serial     t
+                 :components ((:file       "package")
+                              (:file       "conditions")
+                              (:file       "protocol")
+                              (:file       "method-null")))
 
                 (:module     "src"
                  :depends-on ("base")
@@ -86,7 +97,9 @@ spread group communication system."
   :version     (:read-file-form "version-string.sexp")
   :license     "LLGPLv3" ; see COPYING file for details.
   :description "This system provides unit tests for the network.spread system."
-  :depends-on  ((:version :network.spread (:read-file-form "version-string.sexp"))
+  :depends-on  (:more-conditions
+
+                (:version :network.spread (:read-file-form "version-string.sexp"))
 
                 (:version :fiveam         "1.3"))
   :components  ((:module     "base"
@@ -101,6 +114,13 @@ spread group communication system."
                  :components ((:file       "package")
                               (:file       "connection")
                               (:file       "macros")))
+
+                (:module     "authentication"
+                 :pathname   "test/authentication"
+                 :depends-on ("test")
+                 :serial     t
+                 :components ((:file       "package")
+                              (:file       "protocol")))
 
                 (:module     "daemon"
                  :pathname   "test/daemon"
