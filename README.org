@@ -6,8 +6,12 @@
 #+LANGUAGE:    en
 
 * Introduction
-  The =network.spread= system provides Common Lisp bindings for the
-  client library of the [[http://www.spread.org/][Spread group communication system]].
+  The =network.spread= system provides a native Common Lisp
+  implementation of the client role of the communication protocol used
+  by the [[http://www.spread.org/][Spread group communication system]]. This allows clients
+  written in Common Lisp to connect to a Spread server and communicate
+  with other clients. Connections over TCP and UNIX domain sockets are
+  supported.
 
   #+ATTR_HTML: :alt "build status image" :title Build Status :align right
   [[https://travis-ci.org/scymtym/network.spread][https://travis-ci.org/scymtym/network.spread.svg]]
