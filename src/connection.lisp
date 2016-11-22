@@ -92,6 +92,7 @@
 (defmethod initialize-instance :after ((instance connection) &key)
   (let ((mailbox (slot-value instance 'mailbox)))
     (tg:finalize instance (lambda ()
+                            (log:info "~@<Disconnecting ~A~@:>" mailbox)
                             (network.spread.low-level:client-disconnect
                              mailbox)))))
 
