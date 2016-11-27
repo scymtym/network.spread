@@ -66,3 +66,24 @@
       (is (eq :success (authenticate method stream)))
       (is-true failed?)
       (is-false (emptyp report)))))
+
+(test authenticate.skip
+  "Test the `skip' restart established by the `authenticate' generic
+   function."
+
+  (let ((methods (list (make-authentication-method
+                        :mock :name "MOCK1" :behavior :fail)
+                       (make-authentication-method
+                        :mock :name "MOCK2")))
+        (stream  (make-broadcast-stream))
+        (failed? nil)
+        (report  nil))
+    (handler-bind ((authentication-error
+                    (lambda (condition)
+                      (declare (ignore condition))
+                      (setf failed? t
+                            report  (princ-to-string (find-restart 'skip)))
+                      (invoke-restart 'skip))))
+      (is (equal '(nil :success) (authenticate methods stream)))
+      (is-true failed?)
+      (is-false (emptyp report)))))

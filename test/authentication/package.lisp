@@ -1,6 +1,6 @@
 ;;;; package.lisp --- Package definition for tests of the authentication module.
 ;;;;
-;;;; Copyright (C) 2016 Jan Moringen
+;;;; Copyright (C) 2016, 2017 Jan Moringen
 ;;;;
 ;;;; Author: Jan Moringen <jmoringe@techfak.uni-bielefeld.de>
 
@@ -13,6 +13,9 @@
    #:fiveam
 
    #:network.spread.authentication)
+
+  (:shadowing-import-from #:network.spread.authentication
+   #:skip)
 
   (:documentation
    "This package contains unit tests for the authentication module."))

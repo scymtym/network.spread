@@ -78,7 +78,16 @@
            (go :start))))))
 
 (defmethod authenticate ((method sequence) (stream t))
-  (map (class-of method) (rcurry #'authenticate stream) method))
+  (map (class-of method)
+       (lambda (method)
+         (restart-case
+             (authenticate method stream)
+           (skip ()
+             :report (lambda (stream)
+                       (format stream "~@<Skip authentication ~
+                                       method ~A.~@:>"
+                               method)))))
+       method))
 
 ;;; Authentication service
 

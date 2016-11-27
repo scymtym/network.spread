@@ -27,7 +27,8 @@
 
   ;; Restarts
   (:export
-   #:retry)
+   #:retry
+   #:skip)
 
   ;; Authentication method protocol
   (:export
