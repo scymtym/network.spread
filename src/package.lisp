@@ -14,6 +14,12 @@
    #:nibbles
    #:hooks)
 
+  (:import-from #:network.spread.base
+   #:spread-error
+
+   #:retry
+   #:use-daemon)
+
   (:shadow
    #:leave)
 

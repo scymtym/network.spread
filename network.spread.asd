@@ -41,12 +41,19 @@ spread group communication system."
                 :trivial-garbage
 
                 :cl-hooks)
-  :components  ((:module     "src"
+  :components  ((:module     "base"
+                 :pathname   "src/base"
+                 :serial     t
+                 :components ((:file       "package")
+                              (:file       "util")
+                              (:file       "conditions")))
+
+                (:module     "src"
+                 :depends-on ("base")
                  :serial     t
                  :components ((:file       "package")
 
                               (:file       "types")
-                              (:file       "util")
                               (:file       "ffi")
                               (:file       "low-level")
 
@@ -63,6 +70,7 @@ spread group communication system."
 
                 (:module     "daemon"
                  :pathname   "src/daemon"
+                 :depends-on ("base")
                  :serial     t
                  :components ((:file      "package")
                               (:file      "variables")

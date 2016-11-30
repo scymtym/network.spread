@@ -6,7 +6,7 @@
 
 (cl:in-package #:network.spread.daemon)
 
-(define-condition failed-to-start-daemon (network.spread:spread-error)
+(define-condition failed-to-start-daemon (network.spread.base:spread-error)
   ((program   :initarg  :program
               :type     string
               :reader   failed-to-start-daemon-program

@@ -6,12 +6,6 @@
 
 (cl:in-package #:network.spread)
 
-(define-condition spread-error (error)
-  ()
-  (:documentation
-   "This class is used a superclass for Spread-related error condition
-    classes."))
-
 (define-condition spread-client-error (spread-error)
   ((code :initarg  :code
          :type     keyword

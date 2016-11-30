@@ -10,7 +10,7 @@
    #:alexandria
    #:more-conditions)
 
-  (:import-from #:network.spread
+  (:import-from #:network.spread.base
    #:retry
    #:use-daemon)
 
