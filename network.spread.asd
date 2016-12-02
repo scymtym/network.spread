@@ -88,8 +88,8 @@ spread group communication system."
                               (:file       "macros")))
 
                 (:module     "daemon"
-                 :depends-on ("test")
                  :pathname   "test/daemon"
+                 :depends-on ("test")
                  :serial     t
                  :components ((:file       "package")
                               (:file       "daemon")))))
