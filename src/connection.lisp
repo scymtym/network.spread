@@ -82,12 +82,17 @@
    (slot-value connection 'mailbox)))
 
 ;; TODO where to put this?
+;; TODO declare type
 ;; TODO inline
 (defun coerce-group-name (group)
   (typecase group
     (simple-octet-vector group)
     (octet-vector        (coerce group 'simple-octet-vector))
-    (string              (sb-ext:string-to-octets group :external-format :ascii)))) ; TODO speed this case up
+    (string
+     (let ((result (make-octet-vector +group-name-length-limit+))) ; TODO speed this case up
+       (setf (subseq result 0 (length group))
+             (ascii-to-octets group))
+       result))))
 
 (defmethod join ((connection connection) (group simple-array))
   (check-type group octet-vector)
@@ -180,16 +185,20 @@
            (check-type data simple-octet-vector)
            (unless (<= (length data) (message-data-length-limit group-count))
              (error 'message-too-long :data data :group-count group-count)))
-         (maybe-coerce-destination (destination)
+         #+no (maybe-coerce-destination (destination)
            (etypecase destination
              (simple-octet-vector
               destination)
              (octet-vector
               (coerce destination 'simple-octet-vector))
              (string
-              (ascii-to-octets destination))))
+              (coerce-group-name )
+              (unless ())
+              (let ((result (make-octet-vector +group-name-length-limit+)))
+                (setf (subseq result 0 +group-name-length-limit+)
+                      (ascii-to-octets destination))))))
          (prepare-destination (destination)
-           (let ((destination (maybe-coerce-destination destination)))
+           (let ((destination (coerce-group-name #+no maybe-coerce-destination destination)))
              (declare (type simple-octet-vector destination)
                       (inline check-group-name))
              (check-group-name destination))))
