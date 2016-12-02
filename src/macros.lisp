@@ -1,6 +1,6 @@
 ;;;; macros.lisp --- Macros provided by the network.spread system.
 ;;;;
-;;;; Copyright (C) 2011-2016 Jan Moringen
+;;;; Copyright (C) 2011-2017 Jan Moringen
 ;;;;
 ;;;; Author: Jan Moringen <jmoringe@techfak.uni-bielefeld.de>
 
@@ -18,35 +18,52 @@
   `(call-with-connection ,daemon (lambda (,connection-var) ,@body)))
 
 (defun call-with-group (connection group thunk &key (wait? t))
-  (if wait?
-      (let+ ((joined? nil)
-             (left?   nil)
-             ((&flet comsume-until (thunk)
-                (loop :until (funcall thunk)
-                   :do (receive connection :block? nil)))))
-        (hooks:with-handlers
-            (((hooks:object-hook connection 'join-hook)
-              (lambda (group* members)
-                (declare (ignore members))
-                (when (string= group* group)
-                  (setf joined? t))))
-             ((hooks:object-hook connection 'leave-hook)
-              (lambda (group* members)
-                (declare (ignore members))
-                (when (string= group* group)
-                  (setf left? t)))))
-          (unwind-protect
-               (progn
-                 (join connection group)
-                 (comsume-until (lambda () joined?))
-                 (funcall thunk))
-            (leave connection group)
-            (comsume-until (lambda () left?)))))
-      (unwind-protect
-           (progn
-             (join connection group)
-             (funcall thunk))
-        (leave connection group))))
+  (let ((group (coerce-group-name group)))
+    (if wait?
+        (let+ ((joined? nil)
+               (left?   nil)
+               ((&flet comsume-until (thunk)
+                  (loop :until (funcall thunk)
+                     :do (receive connection :block? nil)))))
+          (hooks:with-handlers
+              (((hooks:object-hook connection 'join-hook)
+                (lambda (group* members)
+                  (declare (ignore members)
+                           (type simple-octet-vector group*))
+                  (let ((*print-pretty* t))
+                    (log:info "~@<~A~@:_~
+                               looking for~@:_~
+                               ~,,,16@:/utilities.binary-dump:print-binary-dump/~@:_~
+                               got~@:_~
+                               ~,,,16@:/utilities.binary-dump:print-binary-dump/~@:>"
+                              :join group group*))
+                  (when (not (mismatch group* group))
+                    (setf joined? t))))
+               ((hooks:object-hook connection 'leave-hook)
+                (lambda (group* members)
+                  (declare (ignore members)
+                           (type simple-octet-vector group*))
+                  (let ((*print-pretty* t))
+                    (log:info "~@<~A~@:_~
+                               looking for~@:_~
+                               ~,,,16@:/utilities.binary-dump:print-binary-dump/~@:_~
+                               got~@:_~
+                               ~,,,16@:/utilities.binary-dump:print-binary-dump/~@:>"
+                              :leave group group*))
+                  (when (not (mismatch group* group))
+                    (setf left? t)))))
+            (unwind-protect
+                 (progn
+                   (join connection group)
+                   (comsume-until (lambda () joined?))
+                   (funcall thunk))
+              (leave connection group)
+              (comsume-until (lambda () left?)))))
+        (unwind-protect
+             (progn
+               (join connection group)
+               (funcall thunk))
+          (leave connection group)))))
 
 (defmacro with-group ((connection group &key (wait? nil wait?-supplied?))
                       &body body)
