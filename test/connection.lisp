@@ -1,6 +1,6 @@
 ;;;; connection.lisp --- Unit tests for the connection class.
 ;;;;
-;;;; Copyright (C) 2011, 2012, 2013, 2015 Jan Moringen
+;;;; Copyright (C) 2011-2016 Jan Moringen
 ;;;;
 ;;;; Author: Jan Moringen <jmoringe@techfak.uni-bielefeld.de>
 
@@ -254,16 +254,16 @@
 
     ;; But this one
     (send sender "group" "bar")
-    (is (equalp (multiple-value-list
-                 (receive receiver
-                          :block?         t
-                          :return-groups? (when expected-group t)
-                          :return-sender? sender?))
-                (list expected-message
+    (is (equalp (list expected-message
                       (when sender?
                         sender-name)
                       (when expected-group
-                        (list expected-group)))))
+                        (list expected-group)))
+                (multiple-value-list
+                 (receive receiver
+                          :block?         t
+                          :return-groups? (when expected-group t)
+                          :return-sender? sender?))))
 
     ;; Non-blocking receive should just return.
     (finishes (receive receiver
@@ -281,16 +281,16 @@
     (let ((buffer (make-octet-vector 100)))
       ;; But this one.
       (send sender "group" "bar")
-      (is (equalp (multiple-value-list
-                   (receive-into receiver buffer
-                                 :block?         t
-                                 :return-groups? (when expected-group t)
-                                 :return-sender? sender?))
-                  (list (length expected-message)
+      (is (equalp (list (length expected-message)
                         (when sender?
                           sender-name)
                         (when expected-group
-                          (list expected-group)))))
+                          (list expected-group)))
+                  (multiple-value-list
+                   (receive-into receiver buffer
+                                 :block?         t
+                                 :return-groups? (when expected-group t)
+                                 :return-sender? sender?))))
 
       ;; Buffer too small => spread-client-error: buffer-too-short
       ;;
