@@ -99,6 +99,8 @@ spread group communication system."
   :description "This system provides unit tests for the network.spread system."
   :depends-on  (:more-conditions
 
+                :cl-cont
+
                 (:version :network.spread (:read-file-form "version-string.sexp"))
 
                 (:version :fiveam         "1.3"))
@@ -112,6 +114,9 @@ spread group communication system."
                 (:module     "test"
                  :serial     t
                  :components ((:file       "package")
+
+                              (:file       "mock-server-coroutine")
+
                               (:file       "connection")
                               (:file       "macros")))
 
