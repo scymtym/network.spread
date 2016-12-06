@@ -9,11 +9,24 @@
 ;;; Communication errors
 
 (define-condition communication-error (network.spread.base:spread-error
-                                       stream-error
-                                       chainable-condition)
-  ())
+                                       stream-error)
+  ()
+  (:report
+   (lambda (condition stream)
+     (format stream "~@<Communication with the Spread daemon ~
+                     failed.~/more-conditions:maybe-print-cause/~@:>"
+             condition))))
 
-(define-condition short-read-error (communication-error) ; TODO does not use chainable-condition
+(define-condition generic-communication-error (communication-error ; TODO better name
+                                               chainable-condition)
+  ()
+  (:report
+   (lambda (condition stream)
+     (format stream "~@<Communication with the Spread daemon ~
+                     failed.~/more-conditions:maybe-print-cause/~@:>"
+             condition))))
+
+(define-condition short-read-error (communication-error)
   ((expected-count :initarg  :expected-count
                    :reader   short-read-error-expected-count)
    (received       :initarg  :received

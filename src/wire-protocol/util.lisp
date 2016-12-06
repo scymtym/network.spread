@@ -122,3 +122,18 @@
        :do (setf (subseq buffer offset (+ offset (length name)))
                  (ascii-to-octets name)))
     buffer))
+
+;;; Error translation
+
+(declaim (inline call-with-communication-error-translation))
+(defun call-with-communication-error-translation (thunk stream)
+  (with-condition-translation
+      ((((and error (not network.spread.base:spread-error))
+         generic-communication-error)
+        :stream stream))
+    (funcall thunk)))
+(declaim (notinline call-with-communication-error-translation))
+
+(defmacro with-communication-error-translation ((stream &key inline) &body body)
+  `(locally ,@(when inline `((declare (inline call-with-communication-error-translation))))
+     (call-with-communication-error-translation (lambda () ,@body) ,stream)))
