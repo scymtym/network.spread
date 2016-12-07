@@ -122,11 +122,7 @@
 
 (defun %extract-sender (sender)
   (declare (optimize (speed 3) (debug 0) (safety 0)))
-  #+sbcl (sb-ext:octets-to-string sender
-                                  :external-format :ascii
-                                  :end             (or (position 0 sender)
-                                                       +max-group-name+))
-  #-sbcl (error "not implemented"))
+  (octets-to-ascii sender :end (or (position 0 sender) +max-group-name+)))
 
 (declaim (ftype (function (t octet-vector)
                           (values (or list (eql :group-buffer-too-small))))
@@ -144,12 +140,7 @@
        :collect (let* ((end (+ offset +max-group-name+))
                        (end (or (position 0 groups :start offset :end end)
                                 end)))
-                  #+sbcl (sb-ext:octets-to-string
-                          groups
-                          :external-format :ascii
-                          :start           offset
-                          :end             end))
-       #-sbcl (error "not implemented"))))
+                  (octets-to-ascii groups :start offset :end end)))))
 
 (declaim (ftype (function (fixnum
                            simple-octet-vector non-negative-fixnum non-negative-fixnum

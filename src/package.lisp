@@ -18,7 +18,10 @@
    #:spread-error
 
    #:retry
-   #:use-daemon)
+   #:use-daemon
+
+   #:ascii-to-octets
+   #:octets-to-ascii)
 
   (:shadow
    #:leave)

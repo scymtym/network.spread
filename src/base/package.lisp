@@ -20,7 +20,10 @@
 
   ;; Utilities
   (:export
-   #:parse-daemon-name)
+   #:parse-daemon-name
+
+   #:ascii-to-octets
+   #:octets-to-ascii)
 
   (:documentation
    "Basic functionality used by the other modules."))

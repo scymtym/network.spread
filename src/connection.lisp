@@ -13,7 +13,7 @@
   (unless (<= (length name)  +maximum-group-name-length+)
     (error 'group-too-long-error
            :group (etypecase name
-                    (string       (sb-ext:string-to-octets name))
+                    (string       (ascii-to-octets name))
                     (octet-vector name))))
   name)
 (declaim (notinline check-group-name))
@@ -163,7 +163,7 @@
              (octet-vector
               (coerce destination 'simple-octet-vector))
              (string
-              (sb-ext:string-to-octets destination :external-format :ascii))))
+              (ascii-to-octets destination))))
          (prepare-destination (destination)
            (let ((destination (maybe-coerce-destination destination)))
              (declare (type simple-octet-vector destination)
@@ -212,13 +212,13 @@
 (defmethod send ((connection  connection)
                  (destination string)
                  (data        string))
-  (send-bytes connection destination (sb-ext:string-to-octets data)))
+  (send-bytes connection destination (ascii-to-octets data)))
 
 ;; Relies on the `string'-specialized method
 (defmethod send ((connection  connection)
                  (destination sequence)
                  (data        string))
-  (let ((octets (sb-ext:string-to-octets data)))
+  (let ((octets (ascii-to-octets data)))
     (if (length= 1 destination)
         (send-bytes connection (elt destination 0) octets)
         (send-bytes connection destination octets))))
