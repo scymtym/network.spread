@@ -64,13 +64,16 @@
   "Make sure restarts are established correctly during `connect'
    call."
 
-  (handler-bind
-      ((spread-client-error (lambda (condition)
-                              (declare (ignore condition))
-                              (is-true (find-restart 'retry))
-                              (is-true (find-restart 'use-daemon))
-                              (invoke-restart (find-restart 'use-daemon) *daemon*))))
-    (connect "no-such-daemon")))
+  (let ((tried-once? nil))
+    (handler-bind
+        ((spread-client-error (lambda (condition)
+                                (declare (ignore condition))
+                                (is-true (find-restart 'retry))
+                                (is-true (find-restart 'use-daemon))
+                                (unless tried-once?
+                                  (setf tried-once? t)
+                                  (invoke-restart (find-restart 'use-daemon) *daemon*)))))
+      (connect "no-such-daemon"))))
 
 (test membership/smoke
   "Smoke test for group membership functions."
