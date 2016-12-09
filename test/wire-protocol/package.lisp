@@ -7,9 +7,24 @@
 (cl:defpackage #:network.spread.wire-protocol.test
   (:use
    #:cl
+   #:alexandria
+   #:let-plus
+   #:more-conditions
+
+   #:nibbles
+
    #:fiveam
 
    #:network.spread.wire-protocol)
+
+  (:import-from #:network.spread.base
+   #:ascii-to-octets)
+
+  (:import-from #:network.spread.wire-protocol
+   #:+authentication-data-length-limit+)
+
+  (:import-from #:network.spread.test
+   #:mock-server-coroutine)
 
   (:documentation
    "This package contains unit tests for the wire-protocol module."))

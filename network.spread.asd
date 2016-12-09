@@ -144,7 +144,9 @@ spread group communication system."
                  :pathname   "test/wire-protocol"
                  :depends-on ("test")
                  :serial     t
-                 :components ((:file       "package")))
+                 :components ((:file       "package")
+
+                              (:file       "mock-servers")))
 
                 (:module     "daemon"
                  :pathname   "test/daemon"
