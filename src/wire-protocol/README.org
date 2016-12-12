@@ -1,0 +1,105 @@
+* Introduction
+
+  This document describes the ~wire-protocol~ module, focusing on
+  design issues and internals.
+
+  This module implements the wire protocol used between a Spread
+  client and a Spread daemon and serves as the lowest-level building
+  block for this library. The goals for this module are
+
+  1. Expose all features of the wire protocol (except the
+     variable-Endian bullshit)
+  2. For performance-critical functions (basically only ~client-send~
+     and ~client-receive-into~), do not introduce any avoidable
+     overhead (accepting that this makes the interface less pleasant,
+     hoping that higher-level modules can compensate)
+
+  The second goal leads to the following guiding principles:
+
+  1. All string-like and sequence-of-octets-like data is represented
+     as ~nibbles:simple-octet-vector~ objects. Higher-level modules
+     can provide convenient conversion functions. For group names,
+     padding is assumed to already be in place when multiple group
+     names are packed into one vector.
+  2. Similarly, bitfields and the likes are represented as the numeric
+     value going over the wire (modulo variable-Endian
+     bullshit). Again, higher-level modules can provide convenient
+     conversion functions.
+  3. TODO currently wrong No restarts or condition handlers are established by this
+     module. Signaling conditions is OK, though, since it only happens
+     on the slow path anyway.
+  4. No consing or at least an option to avoid it. As an example,
+     ~client-receive-into~ only returns the name of the sender when
+     requested.
+  5. No thread-safety, in particular no locking of any kind.
+
+* Design Decisions [2/6]
+
+** TODO Group names [0/2]
+
+   Should group names always be 32 octets? ~client-connect~, for
+   example, currently accepts and returns shorter group names.
+
+   Same questions for "private group"
+
+*** TODO As arguments
+
+    When group names (or requested private name) are accepted as
+    arguments, padding is performed automatically. Exception: a
+    concatenation of multiple group names in a single ~octet-vector~
+    is used as-is.
+
+*** TODO As return values
+
+** DONE How to recover from receive-buffer-too-small situations?
+
+   The Spread C API allows the client to have another go at receiving
+   the message, but in a rather insane way.
+
+   We just don't support it. Since there is a very modest upper limit
+   on the message length, a client can always simply supply a buffer
+   of that size and thus ensure that the issue does not occur.
+
+** TODO unchecked ~read-sequence~
+
+   The performance-critical functions ~client-receive-into~ and
+   ~client-send~ should still use a checked variant of
+   ~read-sequence~.
+
+** TODO Input validation
+
+   None besides tightly declared types on interface functions?
+
+** DONE Streams [2/2]
+
+*** DONE Flushing
+
+    The functions ~client-connect~, ~client-disconnect~ and
+    ~client-authenticate~ flush the stream output (via
+    ~force-output~).
+
+    The functions ~client-send~, ~client-join~ and ~client-leave~ do
+    not flush the stream output.
+
+*** DONE How to handle stream-level errors
+
+    Despite the performance impact, ~stream-error~ s such as
+    ~end-of-file~ are translated into conditions defined by the
+    ~wire-protocol~.
+
+** TODO Conditions
+
+   Errors relevant to this module are classified into two categories:
+
+   + communication errors ::
+
+        These errors happen when something goes wrong at the level of
+        the underlying stream. The corresponding condition classes are
+        ~communication-error~ and its subclasses.
+
+   + protocol errors ::
+
+        These errors happen when the underlying communication works but
+        the transmitted content violates the protocol or otherwise
+        causes errors. The corresponding condition classes are
+        ~protocol-error~ and its subclasses.
