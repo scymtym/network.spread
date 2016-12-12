@@ -112,6 +112,7 @@ spread group communication system."
   :description "This system provides unit tests for the network.spread system."
   :depends-on  (:more-conditions
 
+                :flexi-streams
                 :cl-cont
 
                 (:version :network.spread (:read-file-form "version-string.sexp"))
@@ -146,7 +147,8 @@ spread group communication system."
                  :serial     t
                  :components ((:file       "package")
 
-                              (:file       "mock-servers")))
+                              (:file       "mock-servers")
+                              (:file       "mock-server-streams")))
 
                 (:module     "daemon"
                  :pathname   "test/daemon"
