@@ -148,7 +148,8 @@ spread group communication system."
                  :components ((:file       "package")
 
                               (:file       "mock-servers")
-                              (:file       "mock-server-streams")))
+                              (:file       "mock-server-streams")
+                              (:file       "client")))
 
                 (:module     "daemon"
                  :pathname   "test/daemon"

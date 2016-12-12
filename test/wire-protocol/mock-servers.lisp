@@ -6,19 +6,6 @@
 
 (cl:in-package #:network.spread.wire-protocol.test)
 
-;;; Utilities
-
-(defun maybe-ascii-to-octets (thing)
-  (etypecase thing
-    (octet-vector thing)
-    (string       (ascii-to-octets thing))))
-
-(defun write-padded-sequence* (writer sequence length)
-  (funcall writer sequence)
-  (let ((remainder (nth-value 1 (ceiling (length sequence) length))))
-    (unless (zerop remainder)
-      (funcall writer (make-octet-vector (- remainder))))))
-
 ;;;
 
 (defmacro define-mock-server-function (name-and-options lambda-list &body body)
@@ -153,12 +140,7 @@
           (ub32ref/le header 40) (funcall endian-marker (ash message-type 8))
           (ub32ref/le header 44) (length payload))
     (write-sequence* header))
-  (map nil (lambda (group)
-             (write-padded-sequence*
-              #'write-sequence*
-              (maybe-ascii-to-octets group)
-              +group-name-length-limit+))
-       groups)
+  (map nil (compose #'write-sequence* #'coerce-to-group-name) groups)
   (write-sequence* payload))
 
 ;;; Group membership operations
