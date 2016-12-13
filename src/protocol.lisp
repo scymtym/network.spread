@@ -1,17 +1,25 @@
 ;;;; protocol.lisp --- Protocol of the Common Lisp spread bindings.
 ;;;;
-;;;; Copyright (C) 2011-2016 Jan Moringen
+;;;; Copyright (C) 2011-2017 Jan Moringen
 ;;;;
 ;;;; Author: Jan Moringen <jmoringe@techfak.uni-bielefeld.de>
 
 (cl:in-package #:network.spread)
 
-(defgeneric connect (daemon)
+(defgeneric connect (daemon &key name membership? priority)
   (:documentation
    "Connect to the Spread daemon designated by DAEMON.
 
     If the connection attempt succeeds, a `connection' instance is
-    returned."))
+    returned.
+
+    NAME, if supplied, specifies a \"private group\" name that should
+    be requested from the Spread daemon for the new connection.
+
+    MEMBERSHIP? controls whether the created connection receives
+    membership change notifications. TODO is this correct? check!
+
+    PRIORITY currently has no effect."))
 
 (defgeneric disconnect (connection)
   (:documentation

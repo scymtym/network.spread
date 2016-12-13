@@ -257,10 +257,15 @@
 
 ;;; Constructing a connection
 
-(defmethod connect ((daemon string))
+(defmethod connect ((daemon string)
+                    &key
+                    (name        nil)
+                    (membership? t)
+                    (priority    0))
   (let+ (((&values host port) (network.spread.base:parse-daemon-name daemon))
          (mailbox (network.spread.low-level:client-connect
-                   host port nil t 0)))
+                   host port
+                   :name name :membership? membership? :priority priority)))
     (make-instance 'connection
                    :mailbox     mailbox
                    :daemon-name daemon
@@ -268,7 +273,8 @@
                                  (network.spread.low-level:client-private-group
                                   mailbox)))))
 
-(defmethod connect :around ((daemon string))
+(defmethod connect :around ((daemon string) &key name membership? priority)
+  (declare (ignore name membership? priority))
   ;; Install restarts around the connection attempt.
   (loop (restart-case
             (return-from connect (call-next-method daemon))
