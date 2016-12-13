@@ -16,7 +16,7 @@
 (defun endian-mark-little (value)
   (logior value +little-endian-marker+))
 
-(defun endian-unmark-little (value)
+(defun endian-unmark-little (value) ; TODO should this check for presence of endian marker
   (logxor value +little-endian-marker+))
 
 (declaim (inline twos-complement))
