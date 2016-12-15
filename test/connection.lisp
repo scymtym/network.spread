@@ -181,7 +181,7 @@
 
   (with-connection (sender *daemon*)
     (mapc (lambda+ ((destination data))
-            (send sender destination data))
+            (finishes (send sender destination data)))
           '(("foo"                "foo") ; Single destination
             (("group1")           "bar") ; Single destination, dispatched to broadcast method
             (#("group1" "group2") "bar") ; Multiple destinations as vector
@@ -198,6 +198,8 @@
                          :initial-element #\a)
             "does-not-matter"))
 
+    ;; Close CONNECTION. All communication attempts should fail
+    ;; afterwards.
     (disconnect connection)
 
     ;; Single destination.
