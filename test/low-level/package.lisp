@@ -1,6 +1,6 @@
 ;;;; package.lisp --- Package definition for unit tests of the low-level module.
 ;;;;
-;;;; Copyright (C) 2011-2016 Jan Moringen
+;;;; Copyright (C) 2011-2017 Jan Moringen
 ;;;;
 ;;;; Author: Jan Moringen <jmoringe@techfak.uni-bielefeld.de>
 
@@ -17,8 +17,16 @@
   (:import-from #:network.spread.base
    #:ascii-to-octets)
 
+  (:import-from #:network.spread.wire-protocol
+   #:+regular-message/unreliable+
+   #:+regular-message/fifo+)
+
   (:import-from #:network.spread.low-level
    #:make-mailbox)
+
+  (:import-from #:network.spread.wire-protocol.test
+   #:coerce-to-group-name
+   #:coerce-to-group-names)
 
   (:documentation
    "This package contains unit tests for the low-level module."))

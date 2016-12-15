@@ -167,7 +167,9 @@ spread group communication system."
                  :serial     t
                  :components ((:file       "package")
 
-                              (:file       "mock-server-socket")))
+                              (:file       "mock-server-socket")
+
+                              (:file       "client")))
 
                 (:module     "daemon"
                  :pathname   "test/daemon"
