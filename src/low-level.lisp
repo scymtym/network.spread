@@ -183,12 +183,15 @@
                         t)
                        ((minusp result)
                         (%signal-error "Error receiving" result)))))
+                 (message-type ()
+                   (cffi:mem-ref message-type :int16))
                  (return/full (type size)
                    (values (or type (%extract-type service-type)) size
                            (when return-sender?
                              (%extract-sender sender))
                            (when return-groups?
-                             (%extract-groups num-groups groups)))))
+                             (%extract-groups num-groups groups))
+                           (message-type))))
           (declare (dynamic-extent #'receive #'receive/with-data #'receive/probe
                                    #'return/full))
 
@@ -203,7 +206,7 @@
                  ;; Service type indicates regular message => return
                  ;; regular message.
                  ((service-type-matches? service-type :regular-mess)
-                  (values :regular result))
+                  (values :regular result nil nil (message-type)))
                  ;; Service type does not indicate regular message =>
                  ;; return membership message.
                  (t
@@ -227,7 +230,7 @@
                ((service-type-matches? service-type :regular-mess)
                 (set-service-type service-type :drop-recv)
                 (let ((result (receive/with-data 0)))
-                  (values :regular result)))
+                  (values :regular result nil nil (message-type))))
                ;; Service type does not indicate regular message =>
                ;; receive and return membership message.
                (t

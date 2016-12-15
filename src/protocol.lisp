@@ -46,9 +46,16 @@
    "Receive data that is send to any spread group in which CONNECTION
     is a member into BUFFER.
 
-    Return three values: 1. the number of received octets 2. the name
-    of the sender of the received message 3. a list of names of the
-    groups to which the received message has been sent.
+    Return four values:
+
+    1) The number of received octets.
+
+    2) The name of the sender of the received message.
+
+    3) A list of names of the groups to which the received message has
+       been sent.
+
+    4) The message type as specified by the sender of the message.
 
     START and END can be used to specify a subsequence of BUFFER into
     which data should be received.
@@ -63,10 +70,16 @@
    "Receive and return data that is send to any spread group in which
     CONNECTION is a member.
 
-    Return three values: 1. an `nibbles:simple-octet-vector'
-    containing the received data 2. the name of the sender of the
-    received message 3. a list of names of the groups to which the
-    received message has been sent.
+    Return four values:
+
+    1) An `nibbles:simple-octet-vector' containing the received data.
+
+    2) The name of the sender of the received message.
+
+    3) A list of names of the groups to which the received message has
+       been sent.
+
+    4) The message type as specified by the sender of the message.
 
     ")) ; See `+receive*-shared-documentation+' below
 

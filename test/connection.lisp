@@ -261,7 +261,8 @@
                       (when sender?
                         sender-name)
                       (when expected-group
-                        (list expected-group)))
+                        (list expected-group))
+                      0)
                 (multiple-value-list
                  (receive receiver
                           :block?         t
@@ -288,7 +289,8 @@
                         (when sender?
                           sender-name)
                         (when expected-group
-                          (list expected-group)))
+                          (list expected-group))
+                        0)
                   (multiple-value-list
                    (receive-into receiver buffer
                                  :block?         t

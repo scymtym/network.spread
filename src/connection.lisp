@@ -119,12 +119,12 @@
        ;; Receive next message, blocking if necessary. Handle
        ;; membership messages via hooks (callbacks). Keep receiving
        ;; until the message is a regular message.
-       (let+ (((&values type received-bytes sender groups)
+       (let+ (((&values type received-bytes sender groups message-type)
                (%receive-into handle buffer start end
                               return-sender? return-groups?)))
          (case type
            (:regular ; Return regular messages.
-            (return (values received-bytes sender groups)))
+            (return (values received-bytes sender groups message-type)))
            (:join    ; Run hooks for membership messages.
             (run-hook
              (object-hook connection 'join-hook) sender groups))
@@ -145,12 +145,12 @@
     (let ((buffer (make-octet-vector +max-message+)))
       (declare (type simple-octet-vector buffer)
                (dynamic-extent buffer))
-      (let+ (((&values received-bytes sender groups)
+      (let+ (((&values received-bytes sender groups message-type)
               (apply #'receive-into connection buffer args)))
         (when received-bytes
           (locally (declare (type (integer 0 #.+maximum-message-data-length+)
                                   received-bytes))
-            (values (subseq buffer 0 received-bytes) sender groups)))))))
+            (values (subseq buffer 0 received-bytes) sender groups message-type)))))))
 
 (labels ((check-data (data)
            (check-type data simple-octet-vector)
