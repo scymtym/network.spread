@@ -13,4 +13,6 @@
   '(member :join :leave :other))
 
 (deftype return-aspect-switch ()
-  '(or boolean (eql :when-membership)))
+  '(or null                                       ; no returned
+       (member t       :when-membership)          ; as `octet-vector'
+       (member :string :when-membership/string))) ; as `string'

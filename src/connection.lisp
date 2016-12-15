@@ -18,6 +18,13 @@
   name)
 (declaim (notinline check-group-name))
 
+(defun maybe-decode-group-name (octets return-aspect)
+  (case return-aspect
+    ((t :when-membership)
+     octets)
+    ((:string :when-membership/string)
+     (octets-to-ascii octets))))
+
 ;;; `connection'
 
 (defclass connection ()
@@ -137,9 +144,11 @@
                          (start          0)
                          (end            (length buffer))
                          (block?         t)
-                         (return-sender? t)
-                         (return-groups? t))
-  (check-type buffer simple-octet-vector)
+                         (return-sender? :string)
+                         (return-groups? :string))
+  (check-type buffer         simple-octet-vector)
+  (check-type return-sender? return-aspect-switch)
+  (check-type return-groups? return-aspect-switch)
 
   (let ((mailbox (slot-value connection 'mailbox)))
     ;; Do not enter/break out of loop when non-blocking and no
@@ -150,7 +159,9 @@
        ;; until the message is a regular message.
        (let+ (((&values type received-bytes sender groups message-type)
                (network.spread.low-level:client-receive-into
-                mailbox buffer start end return-sender? return-groups?)))
+                mailbox buffer start end return-sender? return-groups?))
+              (sender (maybe-decode-group-name sender return-sender?))
+              (groups (maybe-decode-group-name groups return-groups?))) ; TODO multiple groups
          (case type
            (:regular ; Return regular messages.
             (return (values received-bytes sender groups message-type)))
@@ -165,8 +176,8 @@
                     &rest args
                     &key
                     (block?         t)
-                    (return-sender? t)
-                    (return-groups? t))
+                    (return-sender? :string)
+                    (return-groups? :string))
   (declare (ignore block? return-sender? return-groups?))
 
   ;; SBCL won't do stack allocation otherwise
