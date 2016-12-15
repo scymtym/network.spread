@@ -163,9 +163,11 @@ spread group communication system."
 
                 (:module     "low-level"
                  :pathname   "test/low-level"
-                 :depends-on ("test")
+                 :depends-on ("test" "wire-protocol")
                  :serial     t
-                 :components ((:file       "package")))
+                 :components ((:file       "package")
+
+                              (:file       "mock-server-socket")))
 
                 (:module     "daemon"
                  :pathname   "test/daemon"
