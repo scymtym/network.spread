@@ -245,10 +245,10 @@
                  (with-connection (receiver *daemon*)
                    (with-group (receiver ,group)
                      ,@body)))))
-           `((,(octet-vector 98 97 114) t   ,,group)
-             (,(octet-vector 98 97 114) nil ,,group)
-             (,(octet-vector 98 97 114) t   nil)
-             (,(octet-vector 98 97 114) nil nil)))))
+           `((,(octet-vector 98 97 114) :string ,,group)
+             (,(octet-vector 98 97 114) nil     ,,group)
+             (,(octet-vector 98 97 114) :string nil)
+             (,(octet-vector 98 97 114) nil     nil)))))
 
 (test send-receive/smoke
   "Smoke test for sending and receiving data."
@@ -268,13 +268,13 @@
                 (multiple-value-list
                  (receive receiver
                           :block?         t
-                          :return-groups? (when expected-group t)
+                          :return-groups? (when expected-group :string)
                           :return-sender? sender?))))
 
     ;; Non-blocking receive should just return.
     (finishes (receive receiver
                        :block?         nil
-                       :return-groups? (when expected-group t)
+                       :return-groups? (when expected-group :string)
                        :return-sender? sender?))))
 
 (test send-receive-into/smoke
@@ -296,7 +296,7 @@
                   (multiple-value-list
                    (receive-into receiver buffer
                                  :block?         t
-                                 :return-groups? (when expected-group t)
+                                 :return-groups? (when expected-group :string)
                                  :return-sender? sender?))))
 
       ;; Buffer too small => spread-client-error: buffer-too-short
@@ -313,7 +313,7 @@
       ;; Non-blocking receive should just return.
       (finishes (receive-into receiver buffer
                               :block?         nil
-                              :return-groups? (when expected-group t)
+                              :return-groups? (when expected-group :string)
                               :return-sender? sender?)))))
 
 (test self-discard

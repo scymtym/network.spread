@@ -24,7 +24,10 @@
                (left?   nil)
                ((&flet comsume-until (thunk)
                   (loop :until (funcall thunk)
-                     :do (receive connection :block? nil)))))
+                     :do (receive connection
+                                  :block?         nil
+                                  :return-sender? t
+                                  :return-groups? t)))))
           (hooks:with-handlers
               (((hooks:object-hook connection 'join-hook)
                 (lambda (group* members)

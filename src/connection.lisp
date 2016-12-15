@@ -23,7 +23,19 @@
     ((t :when-membership)
      octets)
     ((:string :when-membership/string)
-     (octets-to-ascii octets))))
+     (when octets
+       (let ((end (position 0 octets)))
+         (octets-to-ascii octets :end end))))))
+
+(defun maybe-decode-group-names (octets return-aspect)
+  (case return-aspect
+    ((t :when-membership)
+     octets)
+    ((:string :when-membership/string)
+     (when octets
+       (loop :for offset :from 0 :below (length octets) :by +group-name-length-limit+
+          :collect (let ((end (position 0 octets :start offset :end (+ offset +group-name-length-limit+))))
+                     (octets-to-ascii octets :start offset :end end)))))))
 
 ;;; `connection'
 
@@ -102,9 +114,10 @@
        result))))
 
 (defmethod join ((connection connection) (group simple-array))
-  (check-type group octet-vector)
-  (network.spread.low-level:client-join
-   (slot-value connection 'mailbox) group))
+  (if (typep group 'octet-vector)
+      (network.spread.low-level:client-join
+       (slot-value connection 'mailbox) group)
+      (call-next-method)))
 
 (defmethod join ((connection connection) (group string))
   (network.spread.low-level:client-join
@@ -119,9 +132,10 @@
   (map nil (curry #'join connection) group))
 
 (defmethod leave ((connection connection) (group simple-array))
-  (check-type group octet-vector)
-  (network.spread.low-level:client-leave
-   (slot-value connection 'mailbox) group))
+  (if (typep group 'octet-vector)
+      (network.spread.low-level:client-leave
+       (slot-value connection 'mailbox) group)
+      (call-next-method)))
 
 (defmethod leave ((connection connection) (group string))
   (network.spread.low-level:client-leave
@@ -157,11 +171,13 @@
        ;; Receive next message, blocking if necessary. Handle
        ;; membership messages via hooks (callbacks). Keep receiving
        ;; until the message is a regular message.
-       (let+ (((&values type received-bytes sender groups message-type)
+       (let+ (((&values type sender groups message-type received-bytes)
                (network.spread.low-level:client-receive-into
-                mailbox buffer start end return-sender? return-groups?))
+                mailbox buffer start end
+                (return-aspect/high->return-aspect/low return-sender?)
+                (return-aspect/high->return-aspect/low return-groups?)))
               (sender (maybe-decode-group-name sender return-sender?))
-              (groups (maybe-decode-group-name groups return-groups?))) ; TODO multiple groups
+              (groups (maybe-decode-group-names groups return-groups?)))
          (case type
            (:regular ; Return regular messages.
             (return (values received-bytes sender groups message-type)))
@@ -209,10 +225,8 @@
                 (setf (subseq result 0 +group-name-length-limit+)
                       (ascii-to-octets destination))))))
          (prepare-destination (destination)
-           (let ((destination (coerce-group-name #+no maybe-coerce-destination destination)))
-             (declare (type simple-octet-vector destination)
-                      (inline check-group-name))
-             (check-group-name destination))))
+           (declare (inline check-group-name))
+           (coerce-group-name #+no maybe-coerce-destination (check-group-name destination))))
 
   (defmethod send-bytes ((connection  connection)
                          (destination simple-array)

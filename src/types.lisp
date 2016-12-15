@@ -1,6 +1,6 @@
 ;;;; types.lisp --- Types for the network.spread system.
 ;;;;
-;;;; Copyright (C) 2011-2016 Jan Moringen
+;;;; Copyright (C) 2011-2017 Jan Moringen
 ;;;;
 ;;;; Author: Jan Moringen <jmoringe@techfak.uni-bielefeld.de>
 
@@ -13,6 +13,12 @@
   '(member :join :leave :other))
 
 (deftype return-aspect-switch ()
-  '(or null                                       ; no returned
+  '(or null                                       ; not returned
        (member t       :when-membership)          ; as `octet-vector'
        (member :string :when-membership/string))) ; as `string'
+
+(defun return-aspect/high->return-aspect/low (return-aspect)
+  (case return-aspect
+    (:string                 t)
+    (:when-membership/string :when-membership)
+    (t                       return-aspect)))
