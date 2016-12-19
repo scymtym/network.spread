@@ -17,6 +17,9 @@
   (:import-from #:network.spread.base
    #:spread-error
 
+   #:daemon-name-syntax-error
+   #:daemon-name-syntax-error-string
+
    #:retry
    #:use-daemon
 
@@ -31,6 +34,9 @@
   ;; Conditions
   (:export
    #:spread-error
+
+   #:daemon-name-syntax-error
+   #:daemon-name-syntax-error-string
 
    #:spread-client-error
    #:spread-error-code

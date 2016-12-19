@@ -1,6 +1,6 @@
 ;;;; network.spread.asd --- System definition for the network.spread system.
 ;;;;
-;;;; Copyright (C) 2011-2016 Jan Moringen
+;;;; Copyright (C) 2011-2017 Jan Moringen
 ;;;;
 ;;;; Author: Jan Moringen <jmoringe@techfak.uni-bielefeld.de>
 
@@ -89,7 +89,14 @@ spread group communication system."
   :depends-on  ((:version :network.spread (:read-file-form "version-string.sexp"))
 
                 (:version :fiveam         "1.3"))
-  :components  ((:module     "test"
+  :components  ((:module     "base"
+                 :pathname   "test/base"
+                 :depends-on ("test")
+                 :serial     t
+                 :components ((:file       "package")
+                              (:file       "util")))
+
+                (:module     "test"
                  :serial     t
                  :components ((:file       "package")
                               (:file       "connection")

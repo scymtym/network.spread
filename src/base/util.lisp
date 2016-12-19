@@ -13,12 +13,14 @@
 
    Return two values: the host component as string or nil if it is not
    specified and the port component as string."
-  (let+ ((@-index (position #\@ name))
-         ((&values host port)
-          (if @-index
-              (values (subseq name (1+ @-index)) (subseq name 0 @-index))
-              (values nil name))))
-    (values host (parse-integer port))))
+  (with-condition-translation (((error daemon-name-syntax-error)
+                                :string name))
+    (let+ ((@-index (position #\@ name))
+           ((&values host port)
+            (if @-index
+                (values (subseq name (1+ @-index)) (subseq name 0 @-index))
+                (values nil name))))
+      (values host (parse-integer port)))))
 
 ;;; String coding
 

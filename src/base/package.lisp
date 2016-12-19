@@ -7,11 +7,15 @@
 (cl:defpackage #:network.spread.base
   (:use
    #:cl
-   #:let-plus)
+   #:let-plus
+   #:more-conditions)
 
   ;; Conditions
   (:export
-   #:spread-error)
+   #:spread-error
+
+   #:daemon-name-syntax-error
+   #:daemon-name-syntax-error-string)
 
   ;; Restarts
   (:export
