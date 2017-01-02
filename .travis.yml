@@ -20,6 +20,5 @@ script:
       -S '(:source-registry (:directory "'$(pwd)'") :ignore-inherited-configuration)'
       -Q
       -s network.spread/test
-      # Tests cannot run without the Spread daemon, yet
-      # '(or (network.spread.test:run-tests)
-      #      (uiop:quit -1))'
+      '(or (network.spread.test:run-tests)
+           (uiop:quit -1))'

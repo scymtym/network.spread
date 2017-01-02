@@ -168,10 +168,7 @@ spread group communication system."
 
 (defmethod perform ((operation test-op)
                     (component (eql (find-system :network.spread/test))))
-  (eval (read-from-string
-         "(network.spread.daemon:with-daemon
-              (:port network.spread-system:*test-port*)
-            (network.spread.test:run-tests))")))
+  (uiop:symbol-call '#:network.spread.test '#:run-tests))
 
 ;;; Configuration stuff
 
