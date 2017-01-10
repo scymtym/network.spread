@@ -1,6 +1,6 @@
 ;;;; package.lisp --- Package definition network.spread system.
 ;;;;
-;;;; Copyright (C) 2011-2016 Jan Moringen
+;;;; Copyright (C) 2011-2017 Jan Moringen
 ;;;;
 ;;;; Author: Jan Moringen <jmoringe@techfak.uni-bielefeld.de>
 
@@ -19,6 +19,8 @@
 
    #:retry
    #:use-daemon
+
+   #:parse-daemon-name
 
    #:ascii-to-octets
    #:octets-to-ascii)
