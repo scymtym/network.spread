@@ -1,6 +1,6 @@
 ;;;; util.lisp --- Utilities provided by the base module.
 ;;;;
-;;;; Copyright (C) 2011-2016 Jan Moringen
+;;;; Copyright (C) 2011-2017 Jan Moringen
 ;;;;
 ;;;; Author: Jan Moringen <jmoringe@techfak.uni-bielefeld.de>
 
@@ -9,10 +9,10 @@
 ;;; Daemon name syntax
 
 (defun parse-daemon-name (name)
-  "Split NAME into port and host components.
+  "Split NAME into host and port components.
 
    Return two values: the host component as string or nil if it is not
-   specified and the port component as string."
+   specified and the parsed port component as an integer."
   (with-condition-translation (((error daemon-name-syntax-error)
                                 :string name))
     (let+ ((@-index (position #\@ name))
