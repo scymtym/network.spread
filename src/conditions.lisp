@@ -1,6 +1,6 @@
 ;;;; conditions.lisp --- Conditions signaled by the network.spread system.
 ;;;;
-;;;; Copyright (C) 2011-2016 Jan Moringen
+;;;; Copyright (C) 2011-2017 Jan Moringen
 ;;;;
 ;;;; Author: Jan Moringen <jmoringe@techfak.uni-bielefeld.de>
 
@@ -71,8 +71,8 @@
              +maximum-message-data-length+)))
   (:documentation
    "This error is signaled when an attempt is made to send an
-    octet-vector which has more than `+maximum-message-data-length+'
-    octets."))
+    octet-vector which is longer than permitted by the Spread
+    protocol."))
 
 (define-condition group-too-long-error (spread-error)
   ((group :initarg  :group
@@ -89,5 +89,5 @@
              (length (group-too-long-error-group condition))
              +maximum-group-name-length+)))
   (:documentation
-   "This error is signaled when a Spread group is specified which has
-    more than `+maximum-group-name-length+' octets."))
+   "This error is signaled when a Spread group is specified which is
+    longer than permitted by the Spread protocol."))
