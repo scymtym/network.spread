@@ -109,8 +109,8 @@ spread group communication system."
                  :components ((:file       "package")
                               (:file       "daemon")))))
 
-(defmethod perform ((op     test-op)
-                    (system (eql (find-system :network.spread/test))))
+(defmethod perform ((operation test-op)
+                    (component (eql (find-system :network.spread/test))))
   (eval (read-from-string
          "(network.spread.daemon:with-daemon
               (:port network.spread-system:*test-port*)
