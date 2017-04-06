@@ -1,0 +1,72 @@
+* Introduction
+
+  This document describes the ~low-level~ module, focusing on design
+  issues and internals. Differences from underlying ~wire-protocol~
+  module are highlighted using *bold text*.
+
+  This module provides a *socket-level* Spread client interface on top
+  of the stream-level interface of the ~wire-protocol~ module. The
+  goals for this module are:
+
+  1. *Operate on sockets* (instead of streams)
+  2. Encapsulate the socket as well as the stream and private name
+     arguments of the ~wire-protocol~ functions in a *"mailbox"
+     structure*
+  3. CHECK Expose all features of the wire protocol
+  4. CHECK For performance-critical functions (basically only
+     ~client-send~ and ~client-receive-into~), introduce *little*
+     overhead
+  5. Provide *keyword-based interfaces instead of bitfields*.
+  6. The high-level client module must be implementable based on this
+     module.
+
+  The second goal leads to the following principles:
+
+  1. CHECK All string-like and sequence-of-octets-like data is represented
+     as ~nibbles:simple-octet-vector~ instances. Higher-level modules
+     can provide convenient conversion functions.
+  2. CHECK No restarts or condition handlers are established by this
+     module. Signaling conditions is OK, though, since it only happens
+     on the slow path anyway.
+  3. CHECK No consing or at least an option to avoid it. As an example,
+     ~client-receive-into~ only returns the name of the sender when
+     requested.
+  4. No thread-safety, in particular no locking of any kind.
+
+* Design Decisions [1/4]
+
+** TODO Group names
+
+   Which representation of group names should be allowed at this
+   level? Same as wire-protocol? Variable length? Strings?
+
+   Same questions for "private name"
+
+** DONE How to recover from receive-buffer-too-small situations?
+
+   Same as ~wire-protocol~ module.
+
+** TODO Streams [1/2]
+
+*** DONE Flushing
+
+    All functions that write to streams *also flush the stream output*.
+
+*** TODO How to handle socket-level errors?
+
+    Wrap in some ~spread-error~?
+
+** TODO Conditions
+
+   Errors relevant to this module are classified into two categories:
+
+   + communication errors ::
+
+        These errors happen when something goes wrong at the level of
+        the underlying stream (and therefore socket).
+
+   + protocol errors ::
+
+        These errors happen when the underlying communication works but
+        the transmitted content violates the protocol or otherwise
+        causes errors.
