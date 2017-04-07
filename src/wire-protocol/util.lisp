@@ -41,11 +41,12 @@
 
 (defun %short-read (context sequence start end position)
   (error 'short-read-error
+         :context        context
          :expected-count (- end start)
          :received       (subseq sequence start position)))
 
-(declaim (inline checked-read-sequence))
-(defun checked-read-sequence (sequence stream &key (start 0) end context)
+(declaim (inline safe-read-sequence))
+(defun safe-read-sequence (context sequence stream &key (start 0) end)
   (let* ((end      (or end (length sequence)))
          (position (read-sequence sequence stream :start start :end end)))
     (unless (= position end)
@@ -54,9 +55,10 @@
 
 (declaim (inline discard-bytes))
 (defun discard-bytes (stream length)
-  (checked-read-sequence **discard-buffer** stream :end length))
+  (safe-read-sequence "discarding input" **discard-buffer** stream
+                      :end length))
 
-(defun write-sequence* (sequence stream &key context) ; TODO NAME
+(defun safe-write-sequence (context sequence stream)
   (log:debug "~@<Writing~@[ ~A~]~:@_~
               ~,,,16@:/utilities.binary-dump:print-binary-dump/~@:>"
              context sequence)
@@ -77,25 +79,25 @@
     (unless (zerop remainder)
       (write-sequence **nul-buffer** stream :end remainder))))
 
-(defun check-length (length min max stream &key context)
+(defun check-length (context length min max stream)
   (cond
     ((logbitp 7 length)
      (error 'failure-result-error
-            :stream stream
-            :code   (twos-complement length)))
+            :context context
+            :stream  stream
+            :code    (twos-complement length)))
     ((not (<= min length max))
      ;; TODO also protocol-error
-     (error "~@<Received a~@[ ~A~] length of ~:D which is not between ~
-             ~:D and ~:D.~@:>"
+     (error "~@<~:[Received a~;~:*When ~A, received a~] length of ~:D ~
+             which is not between ~:D and ~:D.~@:>"
             context length min max)))
   length)
 
-(defun read-length-delimited-sequence (stream min-length max-length
-                                       &key context)
-  (let* ((length (check-length (read-byte stream) min-length max-length
-                               stream :context context))
+(defun read-length-delimited-sequence (context stream min-length max-length)
+  (let* ((length (check-length context (read-byte stream)
+                               min-length max-length stream))
          (buffer (make-octet-vector length)))
-    (checked-read-sequence buffer stream :context context)
+    (safe-read-sequence context buffer stream)
     (log:debug "~@<Read~@[ ~A~]~:@_~
                 ~,,,16@:/utilities.binary-dump:print-binary-dump/~@:>"
                context buffer)

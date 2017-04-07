@@ -24,24 +24,25 @@
             (aref buffer 4) name-length)
       (when name
         (setf (subseq buffer 5 (+ 5 name-length)) name))
-      (write-sequence* buffer stream :context "initial message"))
+      (safe-write-sequence "sending the initial message" buffer stream))
 
     ;; Authenticate using the supplied AUTHENTICATION-METHODS.
     (client-authenticate stream authentication-methods)
 
     ;; Receive daemon version and private group name.
     (let ((version (make-list 3)))
-      (checked-read-sequence version stream :context "daemon version")
+      (safe-read-sequence "receiving the daemon version" version stream)
       (log:debug "~@<Daemon reported version ~{~D~^.~}~@:>" version)
       (unless (typep version *acceptable-daemon-versions*)
         (error 'incompatible-daemon-error
+               :context            "connecting"
                :stream             stream
                :actual-version     version
                :supported-versions *acceptable-daemon-versions-description*))
 
       (values (read-length-delimited-sequence
-               stream 0 +group-name-length-limit+
-               :context "private group name")
+               "receiving the private group name"
+               stream 0 +group-name-length-limit+)
               version))))
 
 (defun client-disconnect (stream private-group)
@@ -65,15 +66,15 @@
   (with-communication-error-translation (stream)
     (let+ (((&values auth-list auth-list-length)
             (read-length-delimited-sequence
-             stream 0 +authentication-data-length-limit+
-             :context "authentication method list"))
+             "receiving the authentication method list"
+             stream 0 +authentication-data-length-limit+))
            (accepted-methods (unpack-auth-methods auth-list auth-list-length))
            (methods          (network.spread.authentication:validate
                               methods accepted-methods)))
 
       ;; Send list of authentication methods to server.
-      (write-sequence* (pack-auth-methods methods) stream
-                       :context "authentication method list")
+      (safe-write-sequence "sending authentication method list"
+                           (pack-auth-methods methods) stream)
 
       ;; Perform authentication using METHODS.
       (network.spread.authentication:authenticate methods stream)
@@ -144,7 +145,7 @@
            (header           (make-octet-vector (header-slot-offset 5))))
       (declare (type (message-data-length 0) available-length)
                (dynamic-extent header))
-      (checked-read-sequence header stream :context "message header")
+      (safe-read-sequence "receiving the message header" header stream)
       (let+ (((&values service-type group-count hint payload-length)
               (if (endian-little? (aref header 0))
                   (values (endian-unmark-little
@@ -177,7 +178,8 @@
             (declare (type (message-data-length 0) payload-length)
                      (type group-count             group-count))
           ;; Depending on RETURN-GROUPS?, read or discard groups.
-          (checked-read-sequence groups stream :end group-length :context "groups")
+          (safe-read-sequence "receiving the groups list" groups stream
+                              :end group-length)
 
           ;; Check payload length vs. available space in BUFFER and
           ;; discard any leftover data.
@@ -185,9 +187,8 @@
                   (if (<= payload-length available-length)
                       (values payload-length   0)
                       (values available-length (- payload-length available-length)))))
-            (checked-read-sequence buffer stream
-                                   :start start :end (+ start read-length)
-                                   :context "payload")
+            (safe-read-sequence "receiving the payload" buffer stream
+                                :start start :end (+ start read-length))
             (when remainder (discard-bytes stream remainder)))
 
           (values service-type private-group (when return-groups? groups)

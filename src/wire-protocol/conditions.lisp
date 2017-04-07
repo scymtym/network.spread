@@ -6,6 +6,14 @@
 
 (cl:in-package #:network.spread.wire-protocol)
 
+(define-condition wire-protocol-condition (condition)
+  ((context :initarg :context
+            :reader  wire-protocol-condition-context))
+  (:default-initargs
+   :context (missing-required-initarg 'wire-protocol-condition :context))
+  (:documentation
+   "TODO"))
+
 ;;; Communication errors
 
 (define-condition communication-error (network.spread.base:spread-error
@@ -15,7 +23,9 @@
    (lambda (condition stream)
      (format stream "~@<Communication with the Spread daemon ~
                      failed.~/more-conditions:maybe-print-cause/~@:>"
-             condition))))
+             condition)))
+  (:documentation
+   "TODO"))
 
 (define-condition generic-communication-error (communication-error ; TODO better name
                                                chainable-condition)
@@ -24,21 +34,30 @@
    (lambda (condition stream)
      (format stream "~@<Communication with the Spread daemon ~
                      failed.~/more-conditions:maybe-print-cause/~@:>"
-             condition))))
+             condition)))
+  (:documentation
+   "TODO"))
 
 (define-condition short-read-error (communication-error)
   ((expected-count :initarg  :expected-count
-                   :reader   short-read-error-expected-count)
+                   :reader   short-read-error-expected-count
+                   :documentation
+                   "Stores the number of expected octets.")
    (received       :initarg  :received
                    :reader   short-read-error-received
-                   :initform nil))
+                   :initform nil
+                   :documentation
+                   "Stores a sequence containing the actually received
+                    octets."))
   (:default-initargs
    :expected-count (missing-required-initarg 'short-read-error :expected-count))
   (:report
    (lambda (condition stream)
-     (let+ (((&structure-r/o short-read-error- expected-count received)
+     (let+ (((&accessors-r/o (context        wire-protocol-condition-context)
+                             (expected-count short-read-error-expected-count)
+                             (received       short-read-error-received))
              condition))
-       (format stream "~@<When receiving~@[ a ~A~], could ~
+       (format stream "~@<~:[Could~;~:*When ~A, could~] ~
                        ~[~
                          ~*not receive any data ~
                        ~:;~
@@ -46,8 +65,10 @@
                          ~,,,16:/utilities.binary-dump:print-binary-dump/~@:_~
                        ~]~
                        of ~:D required octet~:P.~@:>"
-               :TODO-context (length received) (coerce received 'vector)
-               expected-count)))))
+               context (length received) (coerce received 'vector)
+               expected-count))))
+  (:documentation
+   "TODO"))
 
 ;;; Protocol errors
 ;;;
@@ -70,14 +91,15 @@
    :code (missing-required-initarg 'failure-result-error :code))
   (:report
    (lambda (condition stream)
-     (let* ((code        (failure-result-error-code condition))
+     (let* ((context     (wire-protocol-condition-context condition))
+            (code        (failure-result-error-code condition))
             (result      (find code +results+ :key #'result-code)) ; TODO make a function which also handle the unknown code case
             (description (if result
                              (result-description result)
                              "An unknown error")))
-       (format stream "~@<When ~A, the Spread daemon responded with ~
-                       ~S (code ~D).~@:>"
-               :TODO-context description code))))
+       (format stream "~@<~:[The~;~:*When ~A, the~] Spread daemon ~
+                       responded with ~S (code ~D).~@:>"
+               context description code))))
   (:documentation
    "Signaled if the remote end indicates a failed operation."))
 
