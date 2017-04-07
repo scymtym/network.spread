@@ -115,6 +115,9 @@
             (ub32ref/le header (header-slot-offset 2)) group-count
             (ub32ref/le header (header-slot-offset 3)) (endian-mark-little hint)
             (ub32ref/le header (header-slot-offset 4)) payload-length)
+      (log:debug "~@<Writing header~@:_~
+                  ~,,,16:@/utilities.binary-dump:print-binary-dump/~@:>"
+                 header)
       (write-sequence header stream)
 
       ;; Write groups: if GROUPS is a `simple-octet-vector', it contains
@@ -123,6 +126,9 @@
       ;; each containing one group name.
       (if groups-flat?
           (progn
+            (log:debug "Writing groups~&~
+                        ~,,,16/utilities.binary-dump:print-binary-dump/"
+                       groups)
             (write-sequence groups stream)
             (when (minusp group-padding)
               (write-sequence **nul-buffer** stream :end (- group-padding))))
@@ -132,6 +138,9 @@
 
       ;; Write payload.
       (unless (zerop (length payload))
+        (log:debug "Writing payload~&~
+                    ~,,,16/utilities.binary-dump:print-binary-dump/"
+                   payload)
         (write-sequence payload stream))
       (values))))
 (declaim (notinline client-send))
@@ -146,6 +155,9 @@
       (declare (type (message-data-length 0) available-length)
                (dynamic-extent header))
       (safe-read-sequence "receiving the message header" header stream)
+      (log:debug "~@<Received header~:@_~
+                  ~,,,16:@/utilities.binary-dump:print-binary-dump/~@:>"
+                 header)
       (let+ (((&values service-type group-count hint payload-length)
               (if (endian-little? (aref header 0))
                   (values (endian-unmark-little
@@ -177,9 +189,15 @@
         (locally
             (declare (type (message-data-length 0) payload-length)
                      (type group-count             group-count))
+          (log:debug "service-type ~X membership? ~A payload-length ~:D"
+                     service-type membership? payload-length)
+
           ;; Depending on RETURN-GROUPS?, read or discard groups.
           (safe-read-sequence "receiving the groups list" groups stream
                               :end group-length)
+          (log:debug "~@<Received groups~:@_~
+                      ~,,,16:@/utilities.binary-dump:print-binary-dump/~@:>"
+                     groups)
 
           ;; Check payload length vs. available space in BUFFER and
           ;; discard any leftover data.
@@ -190,7 +208,9 @@
             (safe-read-sequence "receiving the payload" buffer stream
                                 :start start :end (+ start read-length))
             (when remainder (discard-bytes stream remainder)))
-
+          (log:debug "~@<Received payload~:@_~
+                      ~,,V,16:@/utilities.binary-dump:print-binary-dump/~@:>"
+                     payload-length buffer)
           (values service-type private-group (when return-groups? groups)
                   message-type payload-length))))))
 (declaim (notinline client-receive-into))
