@@ -6,6 +6,8 @@
 
 (cl:in-package #:network.spread)
 
+;; TODO do we needs these? what should they do?
+
 (define-condition spread-client-error (spread-error
                                        chainable-condition)
   ((code :initarg  :code

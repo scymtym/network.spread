@@ -10,14 +10,14 @@
 (defstruct (mailbox
              (:constructor make-mailbox (socket stream private-group)))
   (socket        nil :type usocket:usocket     :read-only t)
-  (stream        nil :type stream              :read-only t)
+  (stream        nil :type (or null stream))
   (private-group nil :type simple-octet-vector :read-only t))
 
 (defmethod print-object ((object mailbox) stream)
   (print-unreadable-object (object stream :type t :identity t)
-    (format stream "~A@~A"
+    (format stream "~A@~:[<disconnected>~;~:*~A~]"
             (sb-ext:octets-to-string (client-private-group object) :external-format :ascii) ; TODO make a function
-            (usocket:get-peer-name (mailbox-socket object)))))
+            (ignore-errors (usocket:get-peer-name (mailbox-socket object))))))
 
 ;;; Connection management
 

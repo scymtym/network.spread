@@ -41,8 +41,12 @@
     (make-mailbox socket stream private-group)))
 
 (defun client-disconnect (mailbox)
-  (let+ (((&structure-r/o mailbox- stream private-group) mailbox))
-    (network.spread.wire-protocol:client-disconnect stream private-group))
+  (let+ (((&structure mailbox- stream private-group) mailbox))
+    (check-stream mailbox stream)
+    (unwind-protect
+         (network.spread.wire-protocol:client-disconnect stream private-group)
+      (ignore-errors (close stream))
+      (setf stream nil)))
   (values))
 
 (defun client-private-group (mailbox)
@@ -50,16 +54,19 @@
 
 (declaim (inline client-poll))
 (defun client-poll (mailbox)
-  (listen (mailbox-stream mailbox)))
+  (let+ (((&structure-r/o mailbox- stream) mailbox))
+    (check-stream mailbox stream)
+    (listen stream)))
 
 (defun client-send/service-type (mailbox service-type groups message-type payload)
   (declare (optimize (speed 3) (safety 0) (debug 0)))
   (let+ (((&structure-r/o mailbox- stream private-group) mailbox))
+    (check-stream mailbox stream)
     (locally
         (declare (inline network.spread.wire-protocol:client-send))
       (network.spread.wire-protocol:client-send
        stream private-group service-type groups message-type payload))
-    (force-output stream)
+    ; (force-output stream)
     (values)))
 
 (declaim (inline client-send))
@@ -77,6 +84,7 @@
          ((&values service-type private-group groups message-type payload-length)
           (locally
               (declare (inline network.spread.wire-protocol:client-receive-into))
+            (check-stream mailbox stream)
             (network.spread.wire-protocol:client-receive-into
              stream buffer start end return-sender? return-groups?))))
     (values (service-type->message-kind service-type)
@@ -84,12 +92,14 @@
 
 (defun client-join (mailbox group)
   (let+ (((&structure-r/o mailbox- stream private-group) mailbox))
+    (check-stream mailbox stream)
     (network.spread.wire-protocol:client-join stream private-group group)
     (force-output stream))
   (values))
 
 (defun client-leave (mailbox group)
   (let+ (((&structure-r/o mailbox- stream private-group) mailbox))
+    (check-stream mailbox stream)
     (network.spread.wire-protocol:client-leave stream private-group group)
     (force-output stream))
   (values))

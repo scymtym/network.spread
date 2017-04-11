@@ -128,14 +128,19 @@
 ;;; Error translation
 
 (declaim (inline call-with-communication-error-translation))
-(defun call-with-communication-error-translation (thunk stream)
+(defun call-with-communication-error-translation (thunk context stream)
   (with-condition-translation
       ((((and error (not network.spread.base:spread-error))
          generic-communication-error)
-        :stream stream))
+        :context context
+        :stream  stream))
     (funcall thunk)))
 (declaim (notinline call-with-communication-error-translation))
 
-(defmacro with-communication-error-translation ((stream &key inline) &body body)
-  `(locally ,@(when inline `((declare (inline call-with-communication-error-translation))))
-     (call-with-communication-error-translation (lambda () ,@body) ,stream)))
+(defmacro with-communication-error-translation ((context stream &key inline)
+                                                &body body)
+  `(locally
+       ,@(when inline
+           `((declare (inline call-with-communication-error-translation))))
+     (call-with-communication-error-translation
+      (lambda () ,@body) ,context ,stream)))

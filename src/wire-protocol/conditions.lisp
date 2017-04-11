@@ -14,10 +14,14 @@
   (:documentation
    "TODO"))
 
+(define-condition wire-protocol-error (network.spread.base:spread-error
+                                       stream-error
+                                       wire-protocol-condition)
+  ())
+
 ;;; Communication errors
 
-(define-condition communication-error (network.spread.base:spread-error
-                                       stream-error)
+(define-condition communication-error (wire-protocol-error)
   ()
   (:report
    (lambda (condition stream)
@@ -32,8 +36,10 @@
   ()
   (:report
    (lambda (condition stream)
-     (format stream "~@<Communication with the Spread daemon ~
+     (format stream "~@<~:[Communication~;~:*When ~A, communication~] ~
+                     with the Spread daemon ~
                      failed.~/more-conditions:maybe-print-cause/~@:>"
+             (wire-protocol-condition-context condition)
              condition)))
   (:documentation
    "TODO"))
@@ -75,8 +81,7 @@
 ;;; These errors are signaled if the communication itself succeeds but
 ;;; the transmitted messages violate the protocol.
 
-(define-condition protocol-error (network.spread.base:spread-error
-                                  stream-error)
+(define-condition protocol-error (wire-protocol-error)
   ()
   (:documentation
    "Superclass for protocol-related conditions."))

@@ -10,7 +10,7 @@
 
 (defun client-connect (stream name membership? priority authentication-methods)
   (declare (notinline client-send))
-  (with-communication-error-translation (stream)
+  (with-communication-error-translation ("connecting" stream)
     ;; Send initial greeting message with client version and,
     ;; optionally, requested private name.
     (let* ((name-length (if name (length name) 0))
@@ -48,7 +48,7 @@
 (defun client-disconnect (stream private-group)
   (declare (notinline client-send))
   (log:debug "~@<Sending kill message~@:>")
-  (with-communication-error-translation (stream)
+  (with-communication-error-translation ("disconnecting" stream)
     (client-send stream private-group +command-message/kill+ private-group
                  0 +empty-octet-vector+)
     (force-output stream))
@@ -63,7 +63,7 @@
               ~@:>"
              (length methods) methods)
 
-  (with-communication-error-translation (stream)
+  (with-communication-error-translation ("authenticating" stream)
     (let+ (((&values auth-list auth-list-length)
             (read-length-delimited-sequence
              "receiving the authentication method list"
@@ -95,7 +95,7 @@
 
 (declaim (inline client-send))
 (defun client-send (stream private-group service-type groups message-type payload)
-  (with-communication-error-translation (stream :inline t)
+  (with-communication-error-translation ("sending a message" stream :inline t)
     (let+ ((groups-flat?   (typep groups 'simple-octet-vector))
            ((&values group-count group-padding)
             (if groups-flat?
@@ -147,7 +147,7 @@
 
 (declaim (inline client-receive-into))
 (defun client-receive-into (stream buffer start end return-sender? return-groups?)
-  (with-communication-error-translation (stream :inline t)
+  (with-communication-error-translation ("receiving a message" stream :inline t)
     (let* ((start            (or start 0))
            (end              (or end (length buffer)))
            (available-length (- end start))
@@ -189,7 +189,7 @@
         (locally
             (declare (type (message-data-length 0) payload-length)
                      (type group-count             group-count))
-          (log:debug "service-type ~X membership? ~A payload-length ~:D"
+          #+no (log:debug "service-type ~X membership? ~A payload-length ~:D"
                      service-type membership? payload-length)
 
           ;; Depending on RETURN-GROUPS?, read or discard groups.
