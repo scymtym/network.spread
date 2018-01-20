@@ -1,6 +1,6 @@
 ;;;; network.spread.asd --- System definition for the network.spread system.
 ;;;;
-;;;; Copyright (C) 2011-2017 Jan Moringen
+;;;; Copyright (C) 2011-2018 Jan Moringen
 ;;;;
 ;;;; Author: Jan Moringen <jmoringe@techfak.uni-bielefeld.de>
 
@@ -25,22 +25,21 @@
 
 ;;; System definition
 
-(defsystem :network.spread
+(defsystem "network.spread"
   :author      "Jan Moringen <jmoringe@techfak.uni-bielefeld.de>"
   :maintainer  "Jan Moringen <jmoringe@techfak.uni-bielefeld.de>"
   :version     (:read-file-form "version-string.sexp")
   :license     "LLGPLv3" ; see COPYING file for details.
-  :description "This system provides a Common Lisp interface to the
-spread group communication system."
-  :depends-on  (:alexandria
-                :let-plus
-                :more-conditions
+  :description "Common Lisp interface to the Spread group communication system."
+  :depends-on  ("alexandria"
+                "let-plus"
+                "more-conditions"
 
-                :nibbles
-                :cffi
-                :trivial-garbage
+                "nibbles"
+                "cffi"
+                "trivial-garbage"
 
-                :cl-hooks)
+                "cl-hooks")
   :components  ((:module     "base"
                  :pathname   "src/base"
                  :serial     t
@@ -78,17 +77,17 @@ spread group communication system."
                               (:file      "daemon"))
                  :if-feature :sbcl))
 
-  :in-order-to ((test-op (test-op :network.spread/test))))
+  :in-order-to ((test-op (test-op "network.spread/test"))))
 
-(defsystem :network.spread/test
+(defsystem "network.spread/test"
   :author      "Jan Moringen <jmoringe@techfak.uni-bielefeld.de>"
   :maintainer  "Jan Moringen <jmoringe@techfak.uni-bielefeld.de>"
   :version     (:read-file-form "version-string.sexp")
   :license     "LLGPLv3" ; see COPYING file for details.
   :description "This system provides unit tests for the network.spread system."
-  :depends-on  ((:version :network.spread (:read-file-form "version-string.sexp"))
+  :depends-on  ((:version "network.spread" (:read-file-form "version-string.sexp"))
 
-                (:version :fiveam         "1.3"))
+                (:version "fiveam"         "1.3"))
   :components  ((:module     "base"
                  :pathname   "test/base"
                  :depends-on ("test")
@@ -107,14 +106,13 @@ spread group communication system."
                  :depends-on ("test")
                  :serial     t
                  :components ((:file       "package")
-                              (:file       "daemon")))))
+                              (:file       "daemon"))))
 
-(defmethod perform ((operation test-op)
-                    (component (eql (find-system :network.spread/test))))
-  (eval (read-from-string
-         "(network.spread.daemon:with-daemon
-              (:port network.spread-system:*test-port*)
-            (network.spread.test:run-tests))")))
+  :perform (test-op (operation component)
+             (eval (read-from-string
+                    "(network.spread.daemon:with-daemon
+                         (:port network.spread-system:*test-port*)
+                       (network.spread.test:run-tests))"))))
 
 ;;; Configuration stuff
 
