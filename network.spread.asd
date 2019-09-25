@@ -1,6 +1,6 @@
 ;;;; network.spread.asd --- System definition for the network.spread system.
 ;;;;
-;;;; Copyright (C) 2011-2018 Jan Moringen
+;;;; Copyright (C) 2011-2019 Jan Moringen
 ;;;;
 ;;;; Author: Jan Moringen <jmoringe@techfak.uni-bielefeld.de>
 
@@ -69,7 +69,8 @@
 
                 (:module     "daemon"
                  :pathname   "src/daemon"
-                 :depends-on ("base")
+                 :depends-on ("base"
+                              (:require :sb-posix))
                  :serial     t
                  :components ((:file      "package")
                               (:file      "variables")
